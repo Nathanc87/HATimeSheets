@@ -177,7 +177,12 @@ def report_data(start=None, end=None):
             sql += " WHERE work_date BETWEEN ? AND ?"
             params = [start,end]
         shifts = [dict(r) for r in db.execute(sql + " ORDER BY work_date,start_time", params).fetchall()]
-        travel = [dict(r) for r in db.execute("SELECT * FROM travel ORDER BY travel_date,start_time").fetchall()]
+        travel_sql = "SELECT * FROM travel"
+        travel_params = []
+        if start and end:
+            travel_sql += " WHERE travel_date BETWEEN ? AND ?"
+            travel_params = [start, end]
+        travel = [dict(r) for r in db.execute(travel_sql + " ORDER BY travel_date,start_time", travel_params).fetchall()]
         holidays = [r["holiday_date"] for r in db.execute("SELECT holiday_date FROM holidays").fetchall()]
         return calculate(shifts, travel, settings, holidays), settings, shifts, travel
 
@@ -187,6 +192,11 @@ def report(start: str | None = None, end: str | None = None):
     result["base_rate"] = settings.get("base_rate")
     result["currency"] = settings.get("currency","AUD")
     result["pay_cycle_type"] = settings.get("pay_cycle_type")
+    cycle = cycle_bounds(settings.get("pay_cycle_start_date", ""),
+                         settings.get("pay_cycle_type", "fortnightly"),
+                         settings.get("custom_cycle_days", 14), date.today())
+    result["current_pay_period"] = ({"start": cycle[0].isoformat(), "end": cycle[1].isoformat()}
+                                    if cycle else None)
     if start and end:
         result["period"] = {"start":start,"end":end}
     return result

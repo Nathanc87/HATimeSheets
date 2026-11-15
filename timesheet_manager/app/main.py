@@ -171,6 +171,12 @@ def allowances_get():
 def report_data(start=None, end=None):
     with connect() as db:
         settings = get_settings(db)
+        if not start and not end:
+            cycle = cycle_bounds(settings.get("pay_cycle_start_date", ""),
+                                 settings.get("pay_cycle_type", "fortnightly"),
+                                 settings.get("custom_cycle_days", 14), date.today())
+            if cycle:
+                start, end = cycle[0].isoformat(), cycle[1].isoformat()
         sql = "SELECT * FROM shifts"
         params = []
         if start and end:

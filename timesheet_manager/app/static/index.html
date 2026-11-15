@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HATimeSheets</title><link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand"><span class="brand-icon">◷</span><div><b>HATimeSheets</b><small>Personal time tracker</small></div></div>
+  <nav>
+    <button class="nav active" data-page="dashboard">▦ <span>Dashboard</span></button>
+    <button class="nav" data-page="shifts">◷ <span>Time entries</span></button>
+    <button class="nav" data-page="travel">↗ <span>Travel</span></button>
+    <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
+    <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
+  </nav>
+  <div class="sidebar-foot">Single-user edition · v0.1.0</div>
+</aside>
+<main>
+<header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
+<section id="dashboard" class="page active">
+  <div class="cards">
+    <article class="stat"><span>Hours this week</span><strong id="week-hours">—</strong><small>Paid work hours</small></article>
+    <article class="stat"><span>Travel hours</span><strong id="travel-hours">—</strong><small>Recorded travel</small></article>
+    <article class="stat"><span>Estimated gross</span><strong id="gross">Not configured</strong><small id="gross-note">Set your hourly rate in Settings</small></article>
+  </div>
+  <div class="grid-two">
+    <article class="panel"><div class="panel-head"><div><h2>Recent shifts</h2><p>Your latest recorded work</p></div><button class="small-btn" onclick="showPage('shifts')">View all</button></div><div id="recent-shifts" class="record-list"></div></article>
+    <article class="panel"><div class="panel-head"><div><h2>Quick entry</h2><p>Record a completed shift</p></div></div><form id="quick-form" class="form">
+      <label>Date<input name="work_date" type="date" required></label>
+      <div class="form-row"><label>Start<input name="start_time" type="time" value="05:30" required></label><label>Finish<input name="finish_time" type="time" value="16:00" required></label></div>
+      <label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="30"></label>
+      <label>Notes<textarea name="notes" rows="3" placeholder="Work completed, job details, issues..."></textarea></label>
+      <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
+      <button class="primary">Save shift</button>
+    </form></article>
+  </div>
+</section>
+<section id="shifts" class="page">
+  <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Record and review your shifts</p></div><button class="small-btn" onclick="showPage('dashboard')">+ New shift</button></div><div id="shift-list" class="table-wrap"></div></article>
+</section>
+<section id="travel" class="page">
+  <div class="grid-two">
+    <article class="panel"><div class="panel-head"><div><h2>Add travel</h2><p>Record travel time separately from work time</p></div></div>
+    <form id="travel-form" class="form">
+      <label>Date<input name="travel_date" type="date" required></label>
+      <div class="form-row"><label>Start<input name="start_time" type="time" required></label><label>Finish<input name="finish_time" type="time" required></label></div>
+      <label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="0"></label>
+      <label>Link to shift (optional)<select name="shift_id" id="travel-shift"><option value="">No linked shift</option></select></label>
+      <label>Travel notes<textarea name="notes" rows="3" placeholder="From/to, purpose, job..."></textarea></label>
+      <button class="primary">Save travel</button>
+    </form></article>
+    <article class="panel"><div class="panel-head"><div><h2>Travel records</h2><p>Recorded travel entries</p></div></div><div id="travel-list" class="record-list"></div></article>
+  </div>
+</section>
+<section id="reports" class="page">
+  <article class="panel"><div class="panel-head"><div><h2>Reports & export</h2><p>Download your recorded timesheets</p></div></div>
+  <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label></div>
+  <div class="report-cards" id="report-summary"></div>
+  <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
+  <p class="hint">Exports contain shift times, breaks, notes, calculated categories and travel records.</p></article>
+</section>
+<section id="settings" class="page">
+  <article class="panel"><div class="panel-head"><div><h2>Payroll settings</h2><p>Configure your pay cycle and calculation rules. No hourly rate is assumed.</p></div></div>
+  <form id="settings-form" class="form settings-form">
+    <h3>Base pay</h3>
+    <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
+    <h3>Pay cycle</h3>
+    <div class="form-row"><label>Cycle type<select name="pay_cycle_type"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom days</option></select></label><label>Cycle anchor / first day<input name="pay_cycle_start_date" type="date"></label></div>
+    <div class="form-row"><label>Custom cycle length (days)<input name="custom_cycle_days" type="number" min="1" value="14"></label><label>Overtime week starts<select name="week_start_day"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></label></div>
+    <label>Ordinary hours per overtime week<input name="ordinary_hours" type="number" min="0" step="0.25"></label>
+    <h3>Overtime tiers</h3><p class="hint">Each tier applies once accumulated weekly work hours reach its threshold. The highest reached tier applies.</p>
+    <div id="overtime-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('overtime')">+ Add overtime tier</button>
+    <h3>Travel rates</h3><p class="hint">Travel tiers use the configured weekly progression threshold. Confirm your agreement's exact travel threshold rules before relying on estimates.</p>
+    <div id="travel-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('travel')">+ Add travel tier</button>
+    <h3>Penalty rules</h3><p class="hint">Day-of-week and public-holiday replacement/additional rules.</p>
+    <div id="penalty-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('penalty')">+ Add penalty rule</button>
+    <h3>Allowances</h3><p class="hint">Record fixed or hourly allowances separately. They are not yet included in estimated gross until an allowance calculation method is configured.</p>
+    <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
+    <div class="actions"><button class="primary">Save settings</button><span id="settings-status" class="hint"></span></div>
+  </form></article>
+  <article class="panel"><div class="panel-head"><div><h2>Public holidays</h2><p>Add dates that should trigger your configured holiday rule</p></div></div>
+    <form id="holiday-form" class="form inline-form"><label>Date<input name="holiday_date" type="date" required></label><label>Name<input name="name" placeholder="Public holiday" required></label><button class="primary">Add holiday</button></form><div id="holiday-list" class="record-list"></div>
+  </article>
+</section>
+<div id="toast" role="status"></div>
+</main>
+<script src="/static/app.js"></script>
+</body></html>

@@ -1,0 +1,22 @@
+name: HATimeSheets
+version: "0.1.0"
+slug: ha_timesheets
+description: Personal timesheet, travel and configurable payroll tracker
+url: https://github.com/Nathanc87/HATimeSheets
+arch:
+  - amd64
+  - aarch64
+  - armv7
+  - armhf
+  - i386
+startup: application
+boot: auto
+init: false
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:clock-time-eight
+panel_title: Timesheets
+map:
+  - data:rw
+options: {}
+schema: {}

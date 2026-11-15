@@ -14,6 +14,9 @@ DEFAULT_SETTINGS = {
     "custom_cycle_days": 14,
     "week_start_day": 0,
     "ordinary_hours": 38,
+    "public_holiday_credit_hours": 10,
+    "public_holiday_credit_days": [0, 1, 2, 3],
+    "public_holiday_credit_counts_toward_overtime": None,
     "overtime_tiers": [
         {"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"},
         {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}
@@ -25,8 +28,6 @@ DEFAULT_SETTINGS = {
     ],
     "penalty_rules": [
         {"name": "Sunday", "enabled": True, "condition": "day_of_week", "day": 6,
-         "scope": "work", "multiplier": 2.0, "mode": "replace"},
-        {"name": "Public holiday", "enabled": True, "condition": "public_holiday",
          "scope": "work", "multiplier": 2.0, "mode": "replace"}
     ],
     "allowances": []

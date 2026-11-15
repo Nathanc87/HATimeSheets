@@ -12,8 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY run.sh /run.sh
-RUN chmod a+x /run.sh
+
+RUN mkdir -p /data
 
 EXPOSE 8099
-CMD [ "/run.sh" ]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8099"]

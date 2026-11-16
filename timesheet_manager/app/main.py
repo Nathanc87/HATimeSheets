@@ -1,4 +1,5 @@
 import csv
+import asyncio
 import io
 import json
 from datetime import date
@@ -10,6 +11,7 @@ from openpyxl import Workbook
 
 from .db import connect, init_db, get_settings, save_settings, now_iso
 from .payroll import calculate, cycle_bounds
+from .ha_presence import get_ha_entities, presence_poll
 
 app = FastAPI(title="HATimeSheets")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -43,8 +45,31 @@ class AllowanceIn(BaseModel):
     notes: str = ""
 
 @app.on_event("startup")
-def startup():
+async def startup():
     init_db()
+    app.state.presence_task = asyncio.create_task(presence_poll())
+
+@app.on_event("shutdown")
+async def shutdown():
+    task = getattr(app.state, "presence_task", None)
+    if task:
+        task.cancel()
+
+@app.get("/api/ha/entities")
+def ha_entities():
+    try:
+        return get_ha_entities()
+    except Exception as exc:
+        raise HTTPException(503, f"Home Assistant entities unavailable: {exc}")
+
+@app.get("/api/presence/status")
+def presence_status():
+    with connect() as db:
+        settings = get_settings(db)
+        return {"enabled": bool(settings.get("presence_entity") and settings.get("work_zone_entities")),
+                "entity": settings.get("presence_entity", ""),
+                "zones": settings.get("work_zone_entities", []),
+                "session": settings.get("presence_session")}
 
 @app.get("/", response_class=HTMLResponse)
 def index():
@@ -308,4 +333,4 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.16"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.23"}

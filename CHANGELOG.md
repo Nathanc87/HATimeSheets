@@ -1,3 +1,10 @@
+## [0.1.23] - 2026-11-16
+
+### Added
+- Added configurable Home Assistant presence tracking with selectable person/device_tracker entities and multiple work zones.
+- Automatically records one ordinary shift across work-zone changes, with a persisted grace window and finish time based on actual departure (rounded to the configured interval).
+- Added Supervisor API entity discovery and persistent presence session recovery.
+
 # Changelog
 
 ## [0.1.22] - 2026-11-16

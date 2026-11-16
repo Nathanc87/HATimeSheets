@@ -97,6 +97,25 @@ def settings_put(payload: dict):
         save_settings(db, current)
         return current
 
+@app.post("/api/projects/rename")
+def project_rename(payload: dict):
+    old_name = str(payload.get("old_name", "")).strip()
+    new_name = str(payload.get("new_name", "")).strip()
+    if not old_name or not new_name:
+        raise HTTPException(400, "Project names are required")
+    with connect() as db:
+        db.execute("UPDATE shifts SET project=? WHERE project=?", (new_name, old_name))
+        return {"ok": True}
+
+@app.post("/api/projects/remove")
+def project_remove(payload: dict):
+    name = str(payload.get("name", "")).strip()
+    if not name:
+        raise HTTPException(400, "Project name is required")
+    with connect() as db:
+        db.execute("UPDATE shifts SET project='' WHERE project=?", (name,))
+        return {"ok": True}
+
 @app.get("/api/shifts")
 def shifts_get(start: str | None = None, end: str | None = None):
     with connect() as db:

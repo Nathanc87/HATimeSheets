@@ -41,3 +41,16 @@
 .dashboard-week-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:0 2px}
 .dashboard-week-nav strong{font-size:14px;text-align:center}
 @media(max-width:520px){.dashboard-week-nav{gap:6px}.dashboard-week-nav .small-btn{padding:7px 8px;font-size:11px}.dashboard-week-nav strong{font-size:12px}}
+
+.payg-editor{margin:10px 0 18px;padding:12px;background:var(--panel2);border-radius:9px}
+.payg-year-row{align-items:end}
+.payg-add-year{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.payg-scales{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+.payg-scales h4{font-size:13px;margin:8px 0}
+.payg-bracket-head,.payg-bracket-row{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;align-items:center}
+.payg-bracket-head{font-size:11px;color:var(--muted);padding:6px 0}
+.payg-bracket-row{margin:6px 0}
+.payg-bracket-row input{min-width:0;padding:8px}
+.payg-bracket-row input:disabled{opacity:.65}
+.payg-bracket-row button{font-size:11px;white-space:nowrap}
+@media(max-width:700px){.payg-scales{grid-template-columns:1fr}.payg-bracket-head,.payg-bracket-row{grid-template-columns:1.2fr 1fr 1fr}.payg-bracket-head span:last-child{display:none}.payg-bracket-row button{grid-column:1/-1;justify-self:end}}

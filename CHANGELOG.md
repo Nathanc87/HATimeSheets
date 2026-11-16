@@ -2,6 +2,11 @@
 
 All notable changes to HATimeSheets are documented here.
 
+## [0.1.3] - 2026-11-16
+
+### Fixed
+- Changed numeric rule inputs to accept decimal increments, so penalty and overtime multipliers such as 1.5 can be entered.
+
 ## [0.1.2] - 2026-11-16
 
 ### Added

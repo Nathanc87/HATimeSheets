@@ -287,4 +287,4 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.2"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.3"}

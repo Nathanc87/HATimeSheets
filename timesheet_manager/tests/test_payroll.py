@@ -228,6 +228,32 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result, {"payg": 459, "help": 100, "extra": 10,
                                   "total_withheld": 569, "net": 1431.0})
 
+    def test_annual_resident_tax_brackets(self):
+        from app.payroll import calculate_annual_resident_tax
+        brackets = [
+            {"lower": 0, "upper": 18200, "base_tax": 0, "rate": 0},
+            {"lower": 18200, "upper": 45000, "base_tax": 0, "rate": 0.15},
+            {"lower": 45000, "upper": 135000, "base_tax": 4020, "rate": 0.30},
+            {"lower": 135000, "upper": 190000, "base_tax": 31020, "rate": 0.37},
+            {"lower": 190000, "upper": None, "base_tax": 51370, "rate": 0.45}]
+        self.assertEqual(calculate_annual_resident_tax(18200, brackets), 0)
+        self.assertAlmostEqual(calculate_annual_resident_tax(45000, brackets), 4020)
+        self.assertAlmostEqual(calculate_annual_resident_tax(90000, brackets), 17520)
+        self.assertAlmostEqual(calculate_annual_resident_tax(200000, brackets), 55870)
+
+    def test_annualised_weekly_payg_uses_resident_brackets(self):
+        from app.payroll import calculate_weekly_payg
+        rates = {"resident_brackets": [
+            {"lower": 0, "upper": 18200, "base_tax": 0, "rate": 0},
+            {"lower": 18200, "upper": 45000, "base_tax": 0, "rate": 0.15},
+            {"lower": 45000, "upper": 135000, "base_tax": 4020, "rate": 0.30},
+            {"lower": 135000, "upper": 190000, "base_tax": 31020, "rate": 0.37},
+            {"lower": 190000, "upper": None, "base_tax": 51370, "rate": 0.45}]}
+        result = calculate_weekly_payg(1000, rates, extra_withholding=10)
+        self.assertEqual(result["payg"], 79)
+        self.assertEqual(result["extra"], 10)
+        self.assertEqual(result["net"], 911)
+
     def test_payg_is_calculated_per_week_and_summed_for_report(self):
         rates = {"2026-27": {
             "scale2": [{"upper": 362, "a": 0, "b": 0},

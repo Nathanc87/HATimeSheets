@@ -13,8 +13,10 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 COPY app ./app
+COPY run.sh /run.sh
+RUN chmod a+x /run.sh
 
 RUN mkdir -p /data
 
 EXPOSE 8099
-CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8099"]
+CMD ["/run.sh"]

@@ -191,8 +191,14 @@ def report_data(start=None, end=None):
             travel_sql += " WHERE travel_date BETWEEN ? AND ?"
             travel_params = [start, end]
         travel = [dict(r) for r in db.execute(travel_sql + " ORDER BY travel_date,start_time", travel_params).fetchall()]
+        allowance_sql = "SELECT * FROM allowance_entries"
+        allowance_params = []
+        if start and end:
+            allowance_sql += " WHERE entry_date BETWEEN ? AND ?"
+            allowance_params = [start, end]
+        allowances = [dict(r) for r in db.execute(allowance_sql + " ORDER BY entry_date", allowance_params).fetchall()]
         holidays = [r["holiday_date"] for r in db.execute("SELECT holiday_date FROM holidays").fetchall()]
-        return calculate(shifts, travel, settings, holidays), settings, shifts, travel
+        return calculate(shifts, travel, settings, holidays, allowances), settings, shifts, travel
 
 @app.get("/api/report")
 def report(start: str | None = None, end: str | None = None):
@@ -224,7 +230,9 @@ def export_csv(start: str | None = None, end: str | None = None):
     for item in result["travel"]:
         t = next(x for x in travel if x["id"] == item["id"])
         writer.writerow(["Travel",item["date"],t["start_time"],t["finish_time"],t["break_minutes"],
-                         item["hours"],item["category"],item["multiplier"],"" if item["estimated_earnings"] is None else item["estimated_earnings"],item["notes"]])
+                         item["hours"],item["category"],item["multiplier"],"" if item["estimated_earnings"] is None else item["estimated_earnings"],"", "",item["notes"]])
+    for item in result.get("allowances", []):
+        writer.writerow(["Allowance",item["basis"],"","","","",item["name"],"",item["amount"],"","",""])
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition":"attachment; filename=timesheet.csv"})
 
@@ -250,7 +258,12 @@ def export_xlsx(start: str | None = None, end: str | None = None):
     summary.append(["Work hours",result["total_work_hours"]])
     summary.append(["Travel hours",result["total_travel_hours"]])
     summary.append(["Base hourly rate",settings.get("base_rate")])
+    summary.append(["Allowances",result.get("total_allowances", 0)])
     summary.append(["Estimated gross",result["estimated_gross"]])
+    allowance_sheet = wb.create_sheet("Allowances")
+    allowance_sheet.append(["Allowance","Frequency","Basis","Amount"])
+    for item in result.get("allowances", []):
+        allowance_sheet.append([item["name"],item["frequency"],item["basis"],item["amount"]])
     for sheet in wb.worksheets:
         sheet.freeze_panes = "A2"
         sheet.auto_filter.ref = sheet.dimensions

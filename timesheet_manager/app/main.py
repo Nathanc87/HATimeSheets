@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from openpyxl import Workbook
+from openpyxl.styles import Alignment
 
 from .db import connect, init_db, get_settings, save_settings, now_iso
 from .payroll import calculate, cycle_bounds
@@ -353,6 +354,9 @@ def export_xlsx(start: str | None = None, end: str | None = None):
         for col in sheet.columns:
             letter = col[0].column_letter
             sheet.column_dimensions[letter].width = min(55, max(12, max(len(str(c.value or "")) for c in col) + 2))
+    ws.column_dimensions["I"].width = 55
+    for row in ws.iter_rows(min_row=2, min_col=9, max_col=9):
+        row[0].alignment = Alignment(wrap_text=True, vertical="top")
     stream = io.BytesIO()
     wb.save(stream)
     stream.seek(0)

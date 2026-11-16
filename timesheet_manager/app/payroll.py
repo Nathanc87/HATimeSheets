@@ -105,7 +105,9 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                 base, label = tier_at(earlier + cursor)
                 outside = schedule is not None and not in_roster(moment)
                 multiplier = max(base, 1.5) if outside else base
-                category = "Out-of-hours" if outside and base < 1.5 else label
+                category = ("Overseas" if s.get("is_overseas") else
+                            "Travel" if s.get("is_travelling") else
+                            "Out-of-hours" if outside and base < 1.5 else label)
                 if s.get("is_travelling") or s.get("is_overseas"):
                     multiplier += loading
                 if segments and segments[-1]["category"] == category and abs(segments[-1]["multiplier"] - multiplier) < 1e-8:

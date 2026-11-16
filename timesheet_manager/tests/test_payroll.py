@@ -68,6 +68,7 @@ class PayrollTests(unittest.TestCase):
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
                  "finish_time": "02:00", "break_minutes": 0, "is_overseas": True}
         result = calculate([shift], [], settings)
+        self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Overseas")
         self.assertEqual(result["shifts"][0]["segments"][0]["multiplier"], 1.8)
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 144)
 

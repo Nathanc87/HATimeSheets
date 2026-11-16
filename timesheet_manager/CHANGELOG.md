@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+
+## [0.1.12] - 2026-11-16
+
+### Changed
+- Overseas time entries now use the `Overseas` pay category label instead of `Out-of-hours` or the underlying weekly tier label, while retaining the calculated multiplier.
+
 ## [0.1.11] - 2026-11-16
 
 ### Fixed

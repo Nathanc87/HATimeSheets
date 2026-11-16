@@ -114,3 +114,7 @@
 .date-range-picker{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:14px}
 .date-range-picker label{font-size:11px;color:var(--muted)}.date-range-picker input{padding:8px;font-size:12px}
 @media(max-width:850px){.earnings-chart-layout{grid-template-columns:1fr}.earnings-pie{width:150px}.date-range-picker{grid-template-columns:1fr 1fr}.date-range-picker button{grid-column:1/-1}}
+
+/* 0.1.39 project selectors and project manager */
+#project-list .rule-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin:8px 0}
+#project-list input{width:100%}

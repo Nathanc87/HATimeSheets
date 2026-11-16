@@ -296,5 +296,26 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["total_withheld"], 2269)
         self.assertEqual(result["net"], 3953.64)
 
+    def test_annual_leave_is_ten_paid_hours(self):
+        settings = {"base_rate": 40, "week_start_day": 0,
+                    "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
+                                       {"after_hours": 38, "multiplier": 1.5, "label": "Overtime"}],
+                    "travel_rules": [], "penalty_rules": []}
+        shifts = [{"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
+                   "finish_time": "10:00", "break_minutes": 0, "leave_type": "annual_leave"}]
+        result = calculate(shifts, [], settings)
+        self.assertEqual(result["shifts"][0]["payable_hours"], 10)
+        self.assertEqual(result["shifts"][0]["segments"][0]["pay_code"], "Annual Leave")
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
+
+    def test_sick_leave_is_ten_paid_hours(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": []}
+        shifts = [{"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
+                   "finish_time": "10:00", "break_minutes": 0, "leave_type": "sick_leave"}]
+        result = calculate(shifts, [], settings)
+        self.assertEqual(result["shifts"][0]["segments"][0]["pay_code"], "Sick Leave")
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
+
 if __name__ == "__main__":
     unittest.main()

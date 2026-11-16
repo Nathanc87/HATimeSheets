@@ -217,6 +217,7 @@ def report(start: str | None = None, end: str | None = None):
 
 @app.get("/api/export.csv")
 def export_csv(start: str | None = None, end: str | None = None):
+    from .payroll import minutes_between
     result, settings, shifts, travel = report_data(start, end)
     output = io.StringIO()
     writer = csv.writer(output)
@@ -226,7 +227,7 @@ def export_csv(start: str | None = None, end: str | None = None):
     total_hours = 0.0
     for item in result["shifts"]:
         s = shift_map[item["id"]]
-        paid_minutes = max(0, __import__("app.payroll", fromlist=["minutes_between"]).minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
+        paid_minutes = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
         payable_minutes = min(paid_minutes, 600) if item["is_travelling"] else paid_minutes
         total_hours += payable_minutes / 60
         kind = "Travel" if item["is_travelling"] else ("Public holiday" if s.get("is_public_holiday") else "Work")

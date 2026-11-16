@@ -1,3 +1,10 @@
+## [0.1.43] - 2026-11-17
+
+### Fixed
+- Move previous / next day controls into a prominent, full-width toolbar directly above the entry form so they are visible while creating or editing entries.
+- Add cache-busting version parameters to the app JavaScript and stylesheet to prevent Home Assistant ingress from continuing to serve stale assets.
+- Display the currently selected entry date between the navigation controls and update the sidebar version label.
+
 ## [0.1.42] - 2026-11-17
 
 ### Added

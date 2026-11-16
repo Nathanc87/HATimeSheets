@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.20] - 2026-11-16
+
+### Fixed
+- Updated payroll tests to expect the new reporting-only payroll-code metadata.
+
+### Changed
+- Removed the HELP / study-loan option from settings and exports; weekly PAYG remains income-tax withholding only.
+
+
 ## [0.1.19] - 2026-11-16
 
 ### Changed

@@ -1,3 +1,8 @@
+## [0.1.24] - 2026-11-16
+
+### Fixed
+- Enabled the Home Assistant Core API permission required by the presence entity and work-zone discovery endpoint.
+
 ## [0.1.23] - 2026-11-16
 
 ### Added

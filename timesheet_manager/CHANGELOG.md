@@ -1,3 +1,8 @@
+## [0.1.27] - 2026-11-16
+
+### Fixed
+- Start the application through the s6 `with-contenv` wrapper so Supervisor-provided environment variables, including `SUPERVISOR_TOKEN`, are available to the Home Assistant API integration.
+
 ## [0.1.26] - 2026-11-16
 
 ### Fixed

@@ -1,3 +1,9 @@
+## [0.1.41] - 2026-11-16
+
+### Fixed
+- Restore a usable Notes column width in the report after adding the Project column; widen the report table and wrap notes without breaking words mid-character.
+- Give the Excel export Notes column a wider fixed width and enable text wrapping.
+
 ## [0.1.40] - 2026-11-16
 
 ### Fixed

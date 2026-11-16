@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.19</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.20</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -75,10 +75,10 @@
     <h3>Allowances</h3><p class="hint">Allowances are included in estimated gross: hourly applies to paid work and travel hours, weekly once per work week, and fixed once per work shift.</p>
     <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
     <h3>Weekly PAYG withholding</h3>
-    <div class="form-row"><label>Claim tax-free threshold<select name="payg_tax_free_threshold"><option value="true">Yes</option><option value="false">No</option></select></label><label>HELP / study loan debt<select name="payg_help_enabled"><option value="false">No</option><option value="true">Yes</option></select></label></div>
+    <div class="form-row"><label>Claim tax-free threshold<select name="payg_tax_free_threshold"><option value="true">Yes</option><option value="false">No</option></select></label></div>
     <label>Additional withholding per week ($)<input name="payg_extra_withholding" type="number" min="0" step="1" value="0"></label>
     <label>Financial-year PAYG tables (JSON)<textarea name="payg_years_json" rows="12" spellcheck="false"></textarea></label>
-    <p class="hint">2026–27 ATO weekly Schedule 1 coefficients and Schedule 8 study-loan rates are preloaded. Add future financial years as new keys (for example, "2027-28") with scale1, scale2, help_scale1 and help_scale2 brackets. Each bracket has upper, a and b values; use null for the final upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/coefficients-to-use-in-formulas-for-withholding-from-weekly-payments" target="_blank" rel="noopener">ATO weekly PAYG coefficients</a> · <a href="https://www.ato.gov.au/tax-rates-and-codes/schedule-8-statement-of-formulas-for-calculating-study-and-training-support-loans-components" target="_blank" rel="noopener">ATO HELP coefficients</a>.</p>
+    <p class="hint">2026–27 ATO weekly Schedule 1 coefficients are preloaded. Add future financial years as new keys (for example, "2027-28") with scale1 and scale2 brackets. Each bracket has upper, a and b values; use null for the final upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/coefficients-to-use-in-formulas-for-withholding-from-weekly-payments" target="_blank" rel="noopener">ATO weekly PAYG coefficients</a>.</p>
     <p class="hint">PAYG is estimated separately for each configured work week using the financial year containing that week's end date. Taxable gross includes earnings and allowances. This is not an EOFY assessment.</p>
     <div class="actions"><button class="primary">Save settings</button><span id="settings-status" class="hint"></span></div>
   </form></article>

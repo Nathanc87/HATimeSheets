@@ -1,3 +1,9 @@
+## [0.1.31] - 2026-11-16
+
+### Fixed
+- Use configured ATO weekly PAYG Scale 1 / Scale 2 coefficients in preference to annualised resident tax brackets. Weekly coefficients include the standard Medicare levy, correcting take-home estimates.
+- Retain annual resident tax brackets as a fallback for financial years without weekly ATO coefficients.
+
 ## [0.1.30] - 2026-11-16
 
 ### Fixed

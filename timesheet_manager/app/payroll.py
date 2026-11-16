@@ -142,7 +142,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                 elif category == "Ordinary" and multiplier <= 1.0:
                     pay_code = code("ordinary_1_0")
                 elif "ordinary" in str(label).lower() and multiplier <= 1.5:
-                    pay_code = "Ordinary 1.5"
+                    pay_code = code("ordinary_1_5")
                 elif multiplier >= 1.99:
                     pay_code = code("overtime_2_0")
                 elif multiplier >= 1.49:
@@ -201,7 +201,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             if position >= float(tier.get("after_hours", 0)) * 60:
                 multiplier, label = float(tier.get("multiplier", 1)) + loading, tier.get("label", "Travel")
         travel_kind = "OT" if "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
-        pay_code = f"Travel-OTH {travel_kind} {multiplier:.1f}"
+        pay_code = f"{code('travel_overtime' if travel_kind == 'OT' else 'travel_ordinary')} {multiplier:.1f}"
         earnings = None if rate in (None, "") else round((mins / 60) * float(rate) * multiplier, 2)
         travel_result.append({"id": t["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
                               "category": label, "pay_code": pay_code, "multiplier": multiplier,

@@ -118,3 +118,7 @@
 /* 0.1.39 project selectors and project manager */
 #project-list .rule-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin:8px 0}
 #project-list input{width:100%}
+
+/* 0.1.40 project report filter */
+#report-project{min-width:170px}
+#project-list .rule-row{grid-template-columns:minmax(0,1fr) auto}

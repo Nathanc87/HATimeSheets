@@ -1,3 +1,8 @@
+## [0.1.39] - 2026-11-16
+
+### Added
+- Add reusable project names to time entries, with project management, project selection and report filtering.
+
 ## [0.1.38] - 2026-11-16
 
 ### Changed

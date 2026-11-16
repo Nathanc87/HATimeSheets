@@ -1,4 +1,4 @@
-ARG BUILD_FROM=python:3.12-alpine
+ARG BUILD_FROM=ghcr.io/home-assistant/base:latest
 FROM ${BUILD_FROM}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -6,15 +6,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apk add --no-cache tzdata
+# Home Assistant's base image does not include Python.
+RUN apk add --no-cache python3 py3-pip tzdata
 
 COPY requirements.txt .
-RUN python -m ensurepip --upgrade \
-    && python -m pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 COPY app ./app
 
 RUN mkdir -p /data
 
 EXPOSE 8099
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8099"]
+CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8099"]

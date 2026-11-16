@@ -10,10 +10,11 @@
   <nav>
     <button class="nav active" data-page="dashboard">▦ <span>Dashboard</span></button>
     <button class="nav" data-page="shifts">◷ <span>Time entries</span></button>
+    <button class="nav" data-page="entry">＋ <span>New entry</span></button>
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.1</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.2</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -23,39 +24,35 @@
     <article class="stat"><span>Travel hours (capped)</span><strong id="travel-hours">—</strong><small>Recorded travel</small></article>
     <article class="stat"><span>Estimated gross</span><strong id="gross">Not configured</strong><small id="gross-note">Set your hourly rate in Settings</small></article>
   </div>
-  <div class="grid-two">
-    <article class="panel"><div class="panel-head"><div><h2>Recent shifts</h2><p>Your latest recorded work</p></div><button class="small-btn" onclick="showPage('shifts')">View all</button></div><div id="recent-shifts" class="record-list"></div></article>
-    <article class="panel"><div class="panel-head"><div><h2>Quick entry</h2><p>Record a completed shift</p></div></div><form id="quick-form" class="form">
-      <label>Date<input name="work_date" type="date" required></label>
-      <div class="form-row"><label>Start<input name="start_time" type="time" value="05:30" required></label><label>Finish<input name="finish_time" type="time" value="16:00" required></label></div>
-      <label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="30"></label>
-      <label>Notes<textarea name="notes" rows="3" placeholder="Work completed, job details, issues..."></textarea></label>
-      <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
-      <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">Paid at 1.3×, maximum 10 hours; no overtime or penalty rates</small></label>
-      <label class="check"><input name="is_overseas" type="checkbox"> Overseas</label>
-      <button class="primary">Save time entry</button>
-    </form></article>
-  </div>
+  <article class="panel"><div class="panel-head"><div><h2>Recent shifts</h2><p>Your latest recorded work</p></div><button class="small-btn" onclick="showPage('shifts')">View all</button></div><div id="recent-shifts" class="record-list"></div></article>
 </section>
 <section id="shifts" class="page">
-  <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Record and review your shifts</p></div><button class="small-btn" onclick="showPage('dashboard')">+ New shift</button></div><div id="shift-list" class="table-wrap"></div></article>
-  <article class="panel" id="edit-shift-panel" hidden><div class="panel-head"><div><h2>Edit time entry</h2><p>Update any detail of this recorded shift</p></div></div>
-    <form id="edit-shift-form" class="form"><input type="hidden" id="edit-shift-id">
-      <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="30"></label></div>
-      <div class="form-row"><label>Start<input name="start_time" type="time" required></label><label>Finish<input name="finish_time" type="time" required></label></div>
-      <label>Notes<textarea name="notes" rows="3"></textarea></label>
-      <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
-      <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">Paid at 1.3×, maximum 10 hours</small></label>
-      <label class="check"><input name="is_overseas" type="checkbox"> Overseas</label>
-      <div class="actions"><button class="primary">Save changes</button><button type="button" class="secondary" onclick="cancelEditShift()">Cancel</button></div>
-    </form></article>
+  <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Review, edit or delete recorded shifts</p></div><button class="primary" onclick="newEntry()">+ Add time entry</button></div><div id="shift-list" class="table-wrap"></div></article>
+</section>
+<section id="entry" class="page">
+  <article class="panel entry-panel"><div class="panel-head"><div><h2 id="entry-heading">New time entry</h2><p>Record a work day or travel entry</p></div></div>
+    <form id="entry-form" class="form entry-form">
+      <input type="hidden" name="entry_id" value="">
+      <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" max="1440" value="30"></label></div>
+      <div class="form-row"><label>Time in<input name="start_time" type="time" value="05:30" required></label><label>Time out<input name="finish_time" type="time" value="16:00" required></label></div>
+      <label>Work notes / job description<textarea name="notes" rows="5" placeholder="Work completed, job details, site, issues..."></textarea></label>
+      <div class="entry-options">
+        <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
+        <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">Paid at 1.3×, maximum 10 hours; excluded from overtime</small></label>
+        <label class="check"><input name="is_overseas" type="checkbox"> Overseas</label>
+      </div>
+      <div class="actions"><button class="primary" id="entry-save">Save time entry</button><button type="button" class="secondary" onclick="cancelEntry()">Cancel</button></div>
+    </form>
+  </article>
 </section>
 <section id="reports" class="page">
-  <article class="panel"><div class="panel-head"><div><h2>Reports & export</h2><p>Download your recorded timesheets</p></div></div>
-  <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label></div>
-  <div class="report-cards" id="report-summary"></div>
+  <article class="panel"><div class="panel-head"><div><h2>Timesheet report</h2><p>Daily attendance record for the selected pay period</p></div></div>
+  <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><button class="secondary report-apply" onclick="loadReport()">Apply dates</button></div>
+  <div class="table-wrap timesheet-wrap" id="report-timesheet"></div>
+  <div class="timesheet-total" id="report-totals"></div>
+  <div class="allowance-report"><h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
   <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
-  <p class="hint">Exports contain time entries, travel/overseas flags, breaks, notes and calculated pay categories.</p></article>
+  <p class="hint">The timesheet lists each day once. Allowances are itemised separately below and on their own Excel sheet.</p></article>
 </section>
 <section id="settings" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Payroll settings</h2><p>Configure your pay cycle and calculation rules. No hourly rate is assumed.</p></div></div>

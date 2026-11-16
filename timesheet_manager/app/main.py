@@ -252,7 +252,6 @@ def export_csv(start: str | None = None, end: str | None = None):
     writer.writerow(["Total allowances", result.get("total_allowances", 0)])
     writer.writerow(["Estimated gross", result["estimated_gross"] if result["estimated_gross"] is not None else "Not configured"])
     writer.writerow(["Estimated PAYG", result.get("estimated_payg") if result.get("estimated_payg") is not None else "Not configured"])
-    writer.writerow(["HELP withholding", result.get("estimated_help") if result.get("estimated_help") is not None else "Not configured"])
     writer.writerow(["Total withheld", result.get("total_withheld") if result.get("total_withheld") is not None else "Not configured"])
     writer.writerow(["Estimated take-home", result.get("estimated_net") if result.get("estimated_net") is not None else "Not configured"])
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
@@ -293,7 +292,6 @@ def export_xlsx(start: str | None = None, end: str | None = None):
     totals_sheet.append(["Total allowances", result.get("total_allowances", 0)])
     totals_sheet.append(["Estimated gross", result["estimated_gross"]])
     totals_sheet.append(["Estimated PAYG", result.get("estimated_payg")])
-    totals_sheet.append(["HELP withholding", result.get("estimated_help")])
     totals_sheet.append(["Total withheld", result.get("total_withheld")])
     totals_sheet.append(["Estimated take-home", result.get("estimated_net")])
     for sheet in wb.worksheets:

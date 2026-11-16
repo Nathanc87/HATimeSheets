@@ -141,7 +141,7 @@ def calculate(shifts, travel, settings, holidays=None):
         d = date.fromisoformat(t["travel_date"])
         mins = max(0, minutes_between(t["start_time"], t["finish_time"]) - int(t.get("break_minutes", 0)))
         key = weekly_bucket_start(d, week_start).isoformat()
-        work_before = sum(m for s, sd, m, wk in normalized if wk == key and sd <= d)
+        work_before = sum(m for s, sd, m, wk, is_travel in normalized if wk == key and sd <= d and not is_travel)
         earlier_travel = sum(minutes_between(x["start_time"], x["finish_time"]) - int(x.get("break_minutes", 0))
                              for x in travel if x["travel_date"] < t["travel_date"] and
                              weekly_bucket_start(date.fromisoformat(x["travel_date"]), week_start).isoformat() == key)

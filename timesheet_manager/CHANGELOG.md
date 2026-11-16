@@ -1,3 +1,8 @@
+## [0.1.30] - 2026-11-16
+
+### Fixed
+- Release the JavaScript navigation fix so Home Assistant detects an add-on update.
+
 ## [0.1.29] - 2026-11-16
 
 ### Changed

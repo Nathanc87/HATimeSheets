@@ -61,7 +61,7 @@ let entrySubmitting=false;
 let entryBaseline="";
 function entrySnapshot(){const f=$("#entry-form");return JSON.stringify({data:formObject(f),checks:["is_public_holiday","is_travelling","is_overseas"].map(k=>f.elements[k].checked)})}
 function entryIsDirty(){return !!entryBaseline&&entrySnapshot()!==entryBaseline}
-function updateEntryDirtyState(){const dirty=entryIsDirty(),status=$("#entry-dirty-status");if(status)status.textContent=dirty?"Unsaved changes":""}
+function updateEntryDirtyState(){const dirty=entryIsDirty(),status=$("#entry-dirty-status");if(status)status.textContent=dirty?"Unsaved changes":"";const date=$("#entry-form").elements.work_date.value,label=$("#entry-day-label");if(label)label.textContent=date?displayDate(parseLocalDate(date)):"Choose a date to edit"}
 $("#entry-form").addEventListener("input",updateEntryDirtyState);
 $("#entry-form").addEventListener("change",updateEntryDirtyState);
 async function saveEntry(){

@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+\n## [0.1.6] - 2026-11-16
+
+### Added
+- Added editable normal working hours for each day, including enabled days, start/finish times and unpaid break settings.
+- Work outside the configured daily roster now attracts at least 1.5× pay, regardless of weekly hours.
+- Added editable default weekly pay bands: 1.0× through 38 hours, 1.5× from 38–40, 1.5× from 40–44, and 2.0× above 44.
+- Added configurable additive travel/overseas loading, defaulting to +0.3× on the applicable rate.
+
+### Changed
+- Existing installations inherit newly introduced defaults without overwriting their saved settings.
 
 ## [0.1.5] - 2026-11-16
 

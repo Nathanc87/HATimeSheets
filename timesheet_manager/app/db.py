@@ -14,12 +14,24 @@ DEFAULT_SETTINGS = {
     "custom_cycle_days": 14,
     "week_start_day": 0,
     "ordinary_hours": 38,
+    "normal_hours_schedule": [
+        {"day": 0, "label": "Monday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 1, "label": "Tuesday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 2, "label": "Wednesday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 3, "label": "Thursday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 4, "label": "Friday", "enabled": False, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 5, "label": "Saturday", "enabled": False, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 6, "label": "Sunday", "enabled": False, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30}
+    ],
+    "travel_loading": 0.3,
     "public_holiday_credit_hours": 10,
     "public_holiday_credit_days": [0, 1, 2, 3],
     "public_holiday_credit_counts_toward_overtime": None,
     "overtime_tiers": [
-        {"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"},
-        {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}
+        {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
+        {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x"},
+        {"after_hours": 40, "multiplier": 1.5, "label": "Overtime 1.5x"},
+        {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2.0x"}
     ],
     "travel_rules": [
         {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
@@ -100,7 +112,12 @@ def init_db():
 
 def get_settings(db):
     row = db.execute("SELECT payload FROM settings WHERE id=1").fetchone()
-    return json.loads(row["payload"]) if row else DEFAULT_SETTINGS.copy()
+    if not row:
+        return DEFAULT_SETTINGS.copy()
+    stored = json.loads(row["payload"])
+    merged = DEFAULT_SETTINGS.copy()
+    merged.update(stored)
+    return merged
 
 def save_settings(db, settings):
     db.execute("INSERT INTO settings(id,payload) VALUES(1,?) "

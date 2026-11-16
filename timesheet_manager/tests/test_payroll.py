@@ -31,6 +31,47 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(categories["OT1"], 6)
         self.assertEqual(categories["OT2"], 6)
 
+    def test_weekly_bands_include_ordinary_and_overtime_15(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "normal_hours_schedule": [],
+                    "overtime_tiers": [
+                        {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
+                        {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x"},
+                        {"after_hours": 40, "multiplier": 1.5, "label": "Overtime 1.5x"},
+                        {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2.0x"}],
+                    "travel_loading": 0.3, "penalty_rules": []}
+        shifts = [{"id": i, "work_date": "2026-11-"+str(16+i), "start_time": "00:00",
+                   "finish_time": "10:00", "break_minutes": 0} for i in range(1, 6)]
+        result = calculate(shifts, [], settings)
+        totals = {}
+        for shift in result["shifts"]:
+            for seg in shift["segments"]:
+                totals[seg["category"]] = totals.get(seg["category"], 0) + seg["hours"]
+        self.assertEqual(totals["Ordinary"], 38)
+        self.assertEqual(totals["Ordinary 1.5x"], 2)
+        self.assertEqual(totals["Overtime 1.5x"], 4)
+        self.assertEqual(totals["Overtime 2.0x"], 6)
+
+    def test_work_outside_roster_gets_minimum_15(self):
+        settings = {"base_rate": 40, "week_start_day": 0,
+                    "normal_hours_schedule": [{"day": 0, "enabled": True, "start_time": "05:30", "finish_time": "16:00"}],
+                    "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
+                    "travel_loading": 0.3, "penalty_rules": []}
+        shift = {"id": 1, "work_date": "2026-11-16", "start_time": "04:30",
+                 "finish_time": "07:30", "break_minutes": 0}
+        result = calculate([shift], [], settings)
+        self.assertEqual([(x["category"], x["hours"], x["multiplier"]) for x in result["shifts"][0]["segments"]],
+                         [("Out-of-hours", 1.0, 1.5), ("Ordinary", 2.0, 1.0)])
+
+    def test_overseas_loading_adds_point_three(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "normal_hours_schedule": [],
+                    "overtime_tiers": [{"after_hours": 0, "multiplier": 1.5, "label": "OT"}],
+                    "travel_loading": 0.3, "penalty_rules": []}
+        shift = {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
+                 "finish_time": "02:00", "break_minutes": 0, "is_overseas": True}
+        result = calculate([shift], [], settings)
+        self.assertEqual(result["shifts"][0]["segments"][0]["multiplier"], 1.8)
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 144)
+
     def test_sunday_penalty_replaces_normal_rate(self):
         settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
                     "travel_rules": [], "penalty_rules": [

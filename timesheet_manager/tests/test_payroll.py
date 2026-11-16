@@ -165,9 +165,25 @@ class PayrollTests(unittest.TestCase):
             {"id": 3, "work_date": "2026-11-18", "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30, "is_travelling": True}
         ]
         result = calculate(shifts, [], settings, [], [{"entry_date":"2026-11-16","name":"Reimbursement","amount":25}])
-        self.assertEqual(result["total_allowances"], 145)
-        self.assertEqual(result["estimated_gross"], 1465)
+        self.assertEqual(result["total_allowances"], 165)
+        self.assertEqual(result["estimated_gross"], 1485)
+        self.assertEqual(result["allowances"][0]["basis"], "30.00 work and travel hours")
         self.assertEqual(len(result["allowances"]), 4)
+
+    def test_hourly_allowance_includes_separate_travel_hours(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [],
+                    "allowances": [{"name": "Site", "amount": 2, "frequency": "hourly"}]}
+        shifts = [{"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "05:30",
+                   "finish_time": "16:00", "break_minutes": 30}
+                  for i in range(1, 6)]
+        travel = [{"id": 1, "travel_date": "2026-11-20", "start_time": "06:00",
+                   "finish_time": "16:00", "break_minutes": 0}]
+        result = calculate(shifts, travel, settings)
+        self.assertEqual(result["total_work_hours"], 50)
+        self.assertEqual(result["total_travel_hours"], 10)
+        self.assertEqual(result["allowances"][0]["basis"], "60.00 work and travel hours")
+        self.assertEqual(result["total_allowances"], 120)
 
     def test_allowances_are_reported_without_base_rate_but_gross_is_unknown(self):
         settings = {"base_rate": None, "week_start_day": 0, "overtime_tiers": [],

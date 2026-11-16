@@ -181,20 +181,21 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     work_pay = sum(x["estimated_earnings"] or 0 for x in result)
     travel_pay = sum(x["estimated_earnings"] or 0 for x in travel_result)
 
-    # Hourly allowances apply to work hours; weekly allowances apply once per
-    # work week; fixed allowances apply once per work shift. Travel is excluded.
+    # Hourly allowances apply to paid work and paid travel hours. Weekly
+    # allowances apply once per work week; fixed allowances apply per work shift.
     allowance_breakdown = []
     allowance_total = 0.0
     work_weeks = {key for s, d, mins, key, travelling in normalized if not travelling and mins > 0}
     ordinary_work_hours = sum(x["hours"] for x in result if not x["is_travelling"])
+    allowance_hours = ordinary_work_hours + total_travel
     for rule in settings.get("allowances", []):
         amount = float(rule.get("amount", 0) or 0)
         frequency = rule.get("frequency", "weekly")
         if amount <= 0:
             continue
         if frequency == "hourly":
-            value = ordinary_work_hours * amount
-            basis = f"{ordinary_work_hours:.2f} work hours"
+            value = allowance_hours * amount
+            basis = f"{allowance_hours:.2f} work and travel hours"
         elif frequency == "fixed":
             count = sum(1 for x in result if not x["is_travelling"] and x["hours"] > 0)
             value = count * amount

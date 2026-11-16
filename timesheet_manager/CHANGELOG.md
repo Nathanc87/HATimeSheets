@@ -2,6 +2,11 @@
 
 All notable changes to HATimeSheets are documented here.
 
+## [0.1.14] - 2026-11-16
+
+### Fixed
+- Hourly allowances now include payable travel hours as well as ordinary work hours. The allowance basis shows the combined hours.
+
 ## [0.1.13] - 2026-11-16
 
 ### Changed

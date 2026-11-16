@@ -1,3 +1,9 @@
+## [0.1.42] - 2026-11-17
+
+### Added
+- Add previous-day and next-day navigation to the time-entry editor. Existing entries for the selected day can be opened directly; days without an entry open a new dated form.
+- Detect unsaved form changes and prompt to save before navigating, with an option to discard or cancel navigation. Failed saves keep the user on the current day.
+
 ## [0.1.41] - 2026-11-16
 
 ### Fixed

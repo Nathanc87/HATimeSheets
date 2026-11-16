@@ -86,6 +86,13 @@ def init_db():
             notes TEXT NOT NULL DEFAULT ''
         );
         """)
+        # Additive migrations preserve existing Home Assistant installations and entries.
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(shifts)").fetchall()}
+        if "is_travelling" not in columns:
+            db.execute("ALTER TABLE shifts ADD COLUMN is_travelling INTEGER NOT NULL DEFAULT 0")
+        if "is_overseas" not in columns:
+            db.execute("ALTER TABLE shifts ADD COLUMN is_overseas INTEGER NOT NULL DEFAULT 0")
+
         row = db.execute("SELECT id FROM settings WHERE id=1").fetchone()
         if not row:
             db.execute("INSERT INTO settings(id,payload) VALUES(1,?)",

@@ -88,3 +88,17 @@
 .calendar-day-button:hover{filter:brightness(1.12);border-color:var(--accent)}
 .calendar-day-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rate-line{display:block;white-space:normal;line-height:1.55;margin:1px 0}
+
+/* 0.1.34 report timesheet column sizing */
+#report-timesheet{overflow-x:auto}
+#report-timesheet table{width:100%;min-width:980px;table-layout:fixed;white-space:normal}
+#report-timesheet th,#report-timesheet td{white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+#report-timesheet th:nth-child(1),#report-timesheet td:nth-child(1){width:10%}
+#report-timesheet th:nth-child(2),#report-timesheet td:nth-child(2),
+#report-timesheet th:nth-child(3),#report-timesheet td:nth-child(3){width:6%}
+#report-timesheet th:nth-child(4),#report-timesheet td:nth-child(4){width:9%}
+#report-timesheet th:nth-child(5),#report-timesheet td:nth-child(5){width:8%}
+#report-timesheet th:nth-child(6),#report-timesheet td:nth-child(6){width:29%}
+#report-timesheet th:nth-child(7),#report-timesheet td:nth-child(7){width:12%}
+#report-timesheet th:nth-child(8),#report-timesheet td:nth-child(8){width:20%}
+#report-timesheet .rate-line{white-space:normal;overflow-wrap:anywhere;line-height:1.45;margin:2px 0}

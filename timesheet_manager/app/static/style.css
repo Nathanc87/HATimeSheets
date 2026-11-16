@@ -135,3 +135,8 @@
 #report-timesheet th:nth-child(8),#report-timesheet td:nth-child(8){width:12%}
 #report-timesheet th:nth-child(9),#report-timesheet td:nth-child(9){width:23%;min-width:230px}
 #report-timesheet td:nth-child(9){overflow-wrap:break-word;word-break:normal}
+
+/* 0.1.42 entry day navigation and unsaved-change indicator */
+.entry-day-nav{display:flex;gap:8px;flex-wrap:wrap}
+.entry-dirty-status{min-height:18px;margin:-10px 0 12px;color:#e5b65b;font-size:12px;font-weight:600}
+@media(max-width:560px){#entry .panel-head{align-items:flex-start;gap:12px;flex-direction:column}.entry-day-nav{width:100%}.entry-day-nav button{flex:1}}

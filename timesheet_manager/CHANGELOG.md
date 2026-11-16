@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+## [0.1.11] - 2026-11-16
+
+### Fixed
+- Prevented weekday roster rows from being removed, keeping the seven weekday-to-index mappings stable; days can be disabled instead.
+
 ## [0.1.10] - 2026-11-16
 
 ### Fixed

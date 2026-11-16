@@ -1,3 +1,8 @@
+## [0.1.37] - 2026-11-16
+
+### Fixed
+- Remove the duplicate legacy time-entry form submit handler that caused each calendar-created entry to be posted twice.
+
 ## [0.1.36] - 2026-11-16
 
 ### Fixed

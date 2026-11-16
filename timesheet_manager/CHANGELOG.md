@@ -1,3 +1,8 @@
+## [0.1.36] - 2026-11-16
+
+### Fixed
+- Prevent duplicate time-entry creation when the save action is triggered more than once before the first request completes.
+
 ## [0.1.35] - 2026-11-16
 
 ### Added

@@ -248,19 +248,14 @@ def report_data(start=None, end=None):
 
 @app.get("/api/report")
 def report(start: str | None = None, end: str | None = None, project: str | None = None):
-    result, settings, shifts, travel = report_data(start,end)
+    result, settings, shifts, travel = report_data(start, end)
     if project is not None:
         shifts = [s for s in shifts if (s.get("project") or "") == project]
-        holidays = []
+        shift_ids = {s["id"] for s in shifts}
+        travel = [t for t in travel if t.get("shift_id") in shift_ids]
         with connect() as db:
             holidays = [r["holiday_date"] for r in db.execute("SELECT holiday_date FROM holidays").fetchall()]
-            allowance_sql = "SELECT * FROM allowance_entries"
-            allowance_params = []
-            if start and end:
-                allowance_sql += " WHERE entry_date BETWEEN ? AND ?"
-                allowance_params = [start,end]
-            allowance_entries = [dict(r) for r in db.execute(allowance_sql, allowance_params).fetchall()]
-        result = calculate(shifts, [], settings, holidays, allowance_entries)
+        result = calculate(shifts, travel, settings, holidays, [])
     result["base_rate"] = settings.get("base_rate")
     result["currency"] = settings.get("currency","AUD")
     result["pay_cycle_type"] = settings.get("pay_cycle_type")

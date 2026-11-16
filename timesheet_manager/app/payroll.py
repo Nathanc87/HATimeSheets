@@ -155,7 +155,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
 
         applicable = []
         is_holiday = bool(s.get("is_public_holiday")) or d.isoformat() in holidays
-        for rule in ([] if travelling else penalties):
+        for rule in ([] if travelling or is_leave else penalties):
             cond = rule.get("condition")
             match = ((cond == "day_of_week" and d.weekday() == int(rule.get("day", -1))) or
                      (cond == "public_holiday" and is_holiday))

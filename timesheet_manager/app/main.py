@@ -335,9 +335,9 @@ def export_xlsx(start: str | None = None, end: str | None = None):
         ws.append([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
                    round(payable_minutes / 60, 2), breakdown, kind, bool(item["is_overseas"]), item["notes"]])
     allowance_sheet = wb.create_sheet("Allowances")
-    allowance_sheet.append(["Allowance", "Frequency", "Basis", "Amount"])
+    allowance_sheet.append(["Allowance", "Allowance amount", "Frequency", "Basis", "Period amount"])
     for item in result.get("allowances", []):
-        allowance_sheet.append([item["name"], item["frequency"], item["basis"], item["amount"]])
+        allowance_sheet.append([item["name"], item.get("unit_amount", item["amount"]), item["frequency"], item["basis"], item["amount"]])
     totals_sheet = wb.create_sheet("Totals")
     totals_sheet.append(["Rate category", "Hours"])
     for category, hours_value in rate_totals.items():

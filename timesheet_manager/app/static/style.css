@@ -122,3 +122,16 @@
 /* 0.1.40 project report filter */
 #report-project{min-width:170px}
 #project-list .rule-row{grid-template-columns:minmax(0,1fr) auto}
+
+/* 0.1.41 report notes column restored after adding Project column */
+#report-timesheet table{min-width:1250px;table-layout:fixed}
+#report-timesheet th:nth-child(1),#report-timesheet td:nth-child(1){width:9%}
+#report-timesheet th:nth-child(2),#report-timesheet td:nth-child(2),
+#report-timesheet th:nth-child(3),#report-timesheet td:nth-child(3){width:6%}
+#report-timesheet th:nth-child(4),#report-timesheet td:nth-child(4){width:8%}
+#report-timesheet th:nth-child(5),#report-timesheet td:nth-child(5){width:11%}
+#report-timesheet th:nth-child(6),#report-timesheet td:nth-child(6){width:7%}
+#report-timesheet th:nth-child(7),#report-timesheet td:nth-child(7){width:18%}
+#report-timesheet th:nth-child(8),#report-timesheet td:nth-child(8){width:12%}
+#report-timesheet th:nth-child(9),#report-timesheet td:nth-child(9){width:23%;min-width:230px}
+#report-timesheet td:nth-child(9){overflow-wrap:break-word;word-break:normal}

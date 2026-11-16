@@ -45,7 +45,7 @@ def cycle_bounds(anchor_text, cycle_type, custom_days, target):
 def weekly_bucket_start(day, week_start):
     return day - timedelta(days=(day.weekday() - int(week_start)) % 7)
 
-def calculate(shifts, travel, settings, holidays=None):
+def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     """Calculate transparent estimated categories.
 
     Work overtime thresholds are applied to paid work minutes in each configured
@@ -54,6 +54,7 @@ def calculate(shifts, travel, settings, holidays=None):
     multiplier when configured to do so.
     """
     holidays = set(holidays or [])
+    allowance_entries = allowance_entries or []
     week_start = int(settings.get("week_start_day", 0))
     tiers = sorted(settings.get("overtime_tiers", []), key=lambda x: float(x.get("after_hours", 0)))
     travel_tiers = sorted(settings.get("travel_rules", []), key=lambda x: float(x.get("after_hours", 0)))
@@ -161,6 +162,44 @@ def calculate(shifts, travel, settings, holidays=None):
     earnings_known = rate not in (None, "")
     work_pay = sum(x["estimated_earnings"] or 0 for x in result)
     travel_pay = sum(x["estimated_earnings"] or 0 for x in travel_result)
+
+    # Hourly allowances apply to work hours; weekly allowances apply once per
+    # work week; fixed allowances apply once per work shift. Travel is excluded.
+    allowance_breakdown = []
+    allowance_total = 0.0
+    work_weeks = {key for s, d, mins, key, travelling in normalized if not travelling and mins > 0}
+    ordinary_work_hours = sum(x["hours"] for x in result if not x["is_travelling"])
+    for rule in settings.get("allowances", []):
+        amount = float(rule.get("amount", 0) or 0)
+        frequency = rule.get("frequency", "weekly")
+        if amount <= 0:
+            continue
+        if frequency == "hourly":
+            value = ordinary_work_hours * amount
+            basis = f"{ordinary_work_hours:.2f} work hours"
+        elif frequency == "fixed":
+            count = sum(1 for x in result if not x["is_travelling"] and x["hours"] > 0)
+            value = count * amount
+            basis = f"{count} work shifts"
+        else:
+            count = len(work_weeks)
+            value = count * amount
+            basis = f"{count} work weeks"
+        if value:
+            allowance_breakdown.append({"name": rule.get("name", "Allowance"),
+                                        "frequency": frequency, "basis": basis,
+                                        "amount": round(value, 2)})
+            allowance_total += value
+
+    for entry in allowance_entries:
+        value = float(entry.get("amount", 0) or 0)
+        if value:
+            allowance_breakdown.append({"name": entry.get("name", "Allowance entry"),
+                                        "frequency": "entry", "basis": entry.get("entry_date", ""),
+                                        "amount": round(value, 2)})
+            allowance_total += value
+
     return {"shifts": result, "travel": travel_result, "total_work_hours": total_hours,
             "total_travel_hours": total_travel, "base_rate_configured": earnings_known,
-            "estimated_gross": round(work_pay + travel_pay, 2) if earnings_known else None}
+            "allowances": allowance_breakdown, "total_allowances": round(allowance_total, 2),
+            "estimated_gross": round(work_pay + travel_pay + allowance_total, 2) if earnings_known else None}

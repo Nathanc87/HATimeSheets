@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css">
+<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.43">
 </head>
 <body>
 <aside class="sidebar">
@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.32</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.43</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -38,7 +38,7 @@
   <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Review, edit or delete recorded shifts</p></div><button class="primary" onclick="newEntry()">+ Add time entry</button></div><div class="calendar-nav"><button class="small-btn" type="button" onclick="shiftCalendarMonth(-1)">← Previous</button><strong id="shift-calendar-label"></strong><button class="small-btn" type="button" onclick="shiftCalendarMonth(1)">Next →</button></div><div id="shift-calendar" class="shift-calendar" aria-label="Monthly time entry hours calendar"></div><div class="calendar-legend"><span><i class="legend-dot has-hours"></i> Hours recorded</span><span><i class="legend-dot missing-hours"></i> Past scheduled day with no hours</span></div><div id="shift-list" class="table-wrap"></div></article>
 </section>
 <section id="entry" class="page">
-  <article class="panel entry-panel"><div class="panel-head"><div><h2 id="entry-heading">New time entry</h2><p>Record a work day or travel entry</p></div><div class="entry-day-nav"><button type="button" class="small-btn" onclick="changeEntryDay(-1)">← Previous day</button><button type="button" class="small-btn" onclick="changeEntryDay(1)">Next day →</button></div></div><div id="entry-dirty-status" class="entry-dirty-status" aria-live="polite"></div>
+  <article class="panel entry-panel"><div class="panel-head"><div><h2 id="entry-heading">New time entry</h2><p>Record a work day or travel entry</p></div></div><div class="entry-day-toolbar"><button type="button" class="secondary" onclick="changeEntryDay(-1)">← Previous day</button><span id="entry-day-label">Choose a date to edit</span><button type="button" class="secondary" onclick="changeEntryDay(1)">Next day →</button></div><div id="entry-dirty-status" class="entry-dirty-status" aria-live="polite"></div>
     <form id="entry-form" class="form entry-form">
       <input type="hidden" name="entry_id" value="">
       <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Entry type<select name="leave_type" id="leave-type"><option value="work">Work</option><option value="annual_leave">Annual leave (10 hours)</option><option value="sick_leave">Sick leave (10 hours)</option></select></label></div>
@@ -111,5 +111,5 @@
 </section>
 <div id="toast" role="status"></div>
 </main>
-<script src="static/app.js"></script>
+<script src="static/app.js?v=0.1.43"></script>
 </body></html>

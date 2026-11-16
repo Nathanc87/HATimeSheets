@@ -36,3 +36,8 @@
 #report-totals>.summary-group>table th:first-child,#report-totals>.summary-group>table td:first-child{width:75%}
 #report-totals>.summary-group>table th:last-child,#report-totals>.summary-group>table td:last-child{text-align:right}
 #report-totals>h3{margin:8px 0 12px}
+
+/* 0.1.22 weekly dashboard navigation */
+.dashboard-week-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:0 2px}
+.dashboard-week-nav strong{font-size:14px;text-align:center}
+@media(max-width:520px){.dashboard-week-nav{gap:6px}.dashboard-week-nav .small-btn{padding:7px 8px;font-size:11px}.dashboard-week-nav strong{font-size:12px}}

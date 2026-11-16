@@ -1,3 +1,9 @@
+## [0.1.35] - 2026-11-16
+
+### Added
+- Replace dashboard recent shifts with earnings breakdown pie charts for the current Australian financial year and a selectable date range, including allowances.
+- Add Annual Leave and Sick Leave time-entry types, each recorded as 10 paid hours without requiring start, finish or break times.
+
 ## [0.1.34] - 2026-11-16
 
 ### Changed

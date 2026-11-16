@@ -2,7 +2,7 @@
 
 ### Changed
 - Remove the standalone New entry sidebar item; new entries can be started from the Time entries calendar.
-- Add the configured allowance rate beside each allowance name in the report and CSV export, before frequency.
+- Add the configured allowance rate beside each allowance name in the report and CSV / Excel exports, before frequency.
 - Add editable payroll-code labels in Payroll Settings for ordinary, overtime, public holiday, travel and leave codes.
 
 ## [0.1.44] - 2026-11-17

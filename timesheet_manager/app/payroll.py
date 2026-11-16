@@ -67,17 +67,24 @@ def calculate(shifts, travel, settings, holidays=None):
         d = date.fromisoformat(s["work_date"])
         mins = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
         key = weekly_bucket_start(d, week_start).isoformat()
-        normalized.append((s, d, mins, key))
-        by_week[key] = by_week.get(key, 0) + mins
+        travelling = bool(s.get("is_travelling", False))
+        normalized.append((s, d, mins, key, travelling))
+        # Travel-only entries use the fixed travel rule and do not consume overtime thresholds.
+        if not travelling:
+            by_week[key] = by_week.get(key, 0) + mins
 
-    for s, d, mins, key in normalized:
-        before = by_week[key]
-        # Determine position within the overtime week from earlier shifts.
-        earlier = sum(m for other, od, m, wk in normalized
-                      if wk == key and (od < d or (od == d and other["id"] < s["id"])))
+    for s, d, mins, key, travelling in normalized:
+        # Travel-only entries are excluded from weekly work/overtime progression.
+        earlier = sum(m for other, od, m, wk, is_travel in normalized
+                      if wk == key and not is_travel and
+                      (od < d or (od == d and other["id"] < s["id"])))
         segments = []
+        if travelling:
+            payable_minutes = min(mins, 600)
+            segments = ([{"category": "Travel", "hours": round(payable_minutes / 60, 4),
+                          "multiplier": 1.3}] if payable_minutes else [])
         cursor = 0
-        remaining = mins
+        remaining = 0 if travelling else mins
         while remaining > 0:
             absolute = earlier + cursor
             multiplier = 1.0
@@ -99,7 +106,7 @@ def calculate(shifts, travel, settings, holidays=None):
 
         applicable = []
         is_holiday = bool(s.get("is_public_holiday")) or d.isoformat() in holidays
-        for p in penalties:
+        for p in ([] if travelling else penalties):
             cond = p.get("condition")
             match = ((cond == "day_of_week" and d.weekday() == int(p.get("day", -1))) or
                      (cond == "public_holiday" and is_holiday))
@@ -120,9 +127,12 @@ def calculate(shifts, travel, settings, holidays=None):
                                  "multiplier": float(p.get("multiplier", 0))})
 
         hours = round(mins / 60, 4)
+        payable_hours = round(min(mins, 600) / 60, 4) if travelling else hours
         earnings = None if rate in (None, "") else round(sum(x["hours"] * float(rate) * x["multiplier"] for x in segments), 2)
         result.append({"id": s["id"], "date": d.isoformat(), "hours": hours,
-                       "weekly_hours_including_shift": round((earlier + mins) / 60, 4),
+                       "payable_hours": payable_hours,
+                       "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)),
+                       "weekly_hours_including_shift": round((earlier + (0 if travelling else mins)) / 60, 4),
                        "segments": segments, "estimated_earnings": earnings,
                        "notes": s.get("notes", "")})
 
@@ -145,8 +155,9 @@ def calculate(shifts, travel, settings, holidays=None):
                               "category": label, "multiplier": multiplier,
                               "estimated_earnings": earnings, "notes": t.get("notes", "")})
 
-    total_hours = round(sum(x["hours"] for x in result), 2)
-    total_travel = round(sum(x["hours"] for x in travel_result), 2)
+    total_hours = round(sum(x["hours"] for x in result if not x["is_travelling"]), 2)
+    total_travel = round(sum(x["payable_hours"] for x in result if x["is_travelling"]) +
+                         sum(x["hours"] for x in travel_result), 2)
     earnings_known = rate not in (None, "")
     work_pay = sum(x["estimated_earnings"] or 0 for x in result)
     travel_pay = sum(x["estimated_earnings"] or 0 for x in travel_result)

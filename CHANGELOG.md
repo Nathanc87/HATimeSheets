@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.18] - 2026-11-16
+
+### Changed
+- Render report totals as compact tables matching the existing timesheet and allowances list style.
+- Group paid hours by category, allowances and gross earnings, and PAYG deductions and take-home pay.
+
 ## [0.1.17] - 2026-11-16
 
 ### Changed

@@ -16,3 +16,15 @@
 .summary-net{margin-top:4px;background:var(--panel2);border-radius:6px;padding:7px 10px}
 .summary-net span,.summary-net b{color:var(--text);font-size:13px;font-weight:700}
 @media(max-width:650px){.summary-row{padding-left:6px}}
+
+/* 0.1.18 report summary follows the same compact table layout as allowances */
+.summary-group{margin-top:14px}
+.summary-group h3{font-size:14px;margin:0 0 5px}
+.summary-table{width:100%;border-collapse:collapse;white-space:normal}
+.summary-table th,.summary-table td{padding:8px 10px;font-size:12px;line-height:1.35}
+.summary-table th{font-weight:600}
+.summary-table .summary-value{text-align:right;white-space:nowrap;color:var(--text);font-weight:600}
+.summary-table .summary-emphasis td{font-weight:700;color:var(--text);border-top:1px solid var(--line)}
+.summary-table .summary-net td{font-weight:700;color:var(--text);background:var(--panel2)}
+.summary-table .summary-net td:first-child{border-radius:5px 0 0 5px}
+.summary-table .summary-net td:last-child{border-radius:0 5px 5px 0}

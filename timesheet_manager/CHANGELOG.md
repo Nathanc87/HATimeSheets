@@ -1,3 +1,9 @@
+## [0.1.28] - 2026-11-16
+
+### Changed
+- Replaced manual JSON editing of PAYG financial-year tables with a financial-year selector and visual Scale 1 / Scale 2 weekly bracket editors.
+- Added controls to add financial years and withholding brackets, with validation for bracket limits and coefficients.
+
 ## [0.1.27] - 2026-11-16
 
 ### Fixed

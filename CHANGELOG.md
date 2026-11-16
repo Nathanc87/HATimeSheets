@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.19] - 2026-11-16
+
+### Changed
+- Aligned report hour totals with payroll codes, combining travel and overseas hours under the matching Travel-OTH code while preserving the underlying multipliers.
+- Stacked period summary tables vertically at full report width for consistent alignment.
+- Removed the HELP / study-loan line from the report summary.
+
 ## [0.1.18] - 2026-11-16
 
 ### Changed

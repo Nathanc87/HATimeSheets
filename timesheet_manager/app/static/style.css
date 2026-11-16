@@ -28,3 +28,11 @@
 .summary-table .summary-net td{font-weight:700;color:var(--text);background:var(--panel2)}
 .summary-table .summary-net td:first-child{border-radius:5px 0 0 5px}
 .summary-table .summary-net td:last-child{border-radius:0 5px 5px 0}
+
+/* 0.1.19 stack period summary tables vertically and align to the report width */
+#report-totals{display:block!important;width:100%;min-width:0;box-sizing:border-box}
+#report-totals>.summary-group{display:block!important;width:100%;max-width:none;box-sizing:border-box;margin:16px 0 0}
+#report-totals>.summary-group>table{display:table;width:100%;table-layout:auto}
+#report-totals>.summary-group>table th:first-child,#report-totals>.summary-group>table td:first-child{width:75%}
+#report-totals>.summary-group>table th:last-child,#report-totals>.summary-group>table td:last-child{text-align:right}
+#report-totals>h3{margin:8px 0 12px}

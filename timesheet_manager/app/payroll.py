@@ -95,10 +95,11 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         segments = []
         payable_minutes = min(mins, 600) if travelling else mins
         if travelling:
-            base, _ = tier_at(earlier)
+            base, tier_label = tier_at(earlier)
             if payable_minutes:
-                segments = [{"category": "Travel", "hours": round(payable_minutes / 60, 4),
-                             "multiplier": base + loading}]
+                travel_kind = "OT" if "overtime" in str(tier_label).lower() or str(tier_label).lower().startswith("ot") else "Ordinary"
+                segments = [{"category": "Travel", "pay_code": f"Travel-OTH {travel_kind} {base + loading:.1f}",
+                             "hours": round(payable_minutes / 60, 4), "multiplier": base + loading}]
         else:
             # The entry model stores break duration, not its timestamp; deduct it at shift end.
             start_dt = datetime.combine(d, datetime.strptime(s["start_time"], "%H:%M").time())
@@ -120,10 +121,27 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                             "Out-of-hours" if outside and base < 1.5 else label)
                 if s.get("is_travelling") or s.get("is_overseas"):
                     multiplier += loading
-                if segments and segments[-1]["category"] == category and abs(segments[-1]["multiplier"] - multiplier) < 1e-8:
+                if overseas:
+                    travel_kind = "OT" if daily_overtime or "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
+                    pay_code = f"Travel-OTH {travel_kind} {multiplier:.1f}"
+                elif category == "Out-of-hours":
+                    pay_code = "Ordinary 1.5"
+                elif "public holiday" in str(label).lower():
+                    pay_code = "Public Holiday"
+                elif category == "Ordinary" and multiplier <= 1.0:
+                    pay_code = "Ordinary 1.0"
+                elif "ordinary" in str(label).lower() and multiplier <= 1.5:
+                    pay_code = "Ordinary 1.5"
+                elif multiplier >= 1.99:
+                    pay_code = "Overtime 2.0"
+                elif multiplier >= 1.49:
+                    pay_code = "Overtime 1.5"
+                else:
+                    pay_code = str(label)
+                if segments and segments[-1]["category"] == category and segments[-1].get("pay_code") == pay_code and abs(segments[-1]["multiplier"] - multiplier) < 1e-8:
                     segments[-1]["minutes"] += 1
                 else:
-                    segments.append({"category": category, "minutes": 1, "multiplier": multiplier})
+                    segments.append({"category": category, "pay_code": pay_code, "minutes": 1, "multiplier": multiplier})
             for seg in segments:
                 seg["hours"] = round(seg.pop("minutes") / 60, 4)
 
@@ -140,10 +158,12 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             additions = [x for x in applicable if x.get("mode") == "add"]
             if replacements:
                 chosen = max(replacements, key=lambda x: float(x.get("multiplier", 1)))
-                segments = [{"category": chosen["name"], "hours": round(mins / 60, 4),
+                code = "Public Holiday" if any(x.get("condition") == "public_holiday" for x in replacements) else str(chosen["name"])
+                segments = [{"category": chosen["name"], "pay_code": code, "hours": round(mins / 60, 4),
                              "multiplier": float(chosen.get("multiplier", 1))}]
             for rule in additions:
                 segments.append({"category": rule["name"] + " (additional)",
+                                 "pay_code": str(rule["name"]),
                                  "hours": round(mins / 60, 4),
                                  "multiplier": float(rule.get("multiplier", 0))})
 
@@ -169,9 +189,11 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         for tier in travel_tiers:
             if position >= float(tier.get("after_hours", 0)) * 60:
                 multiplier, label = float(tier.get("multiplier", 1)) + loading, tier.get("label", "Travel")
+        travel_kind = "OT" if "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
+        pay_code = f"Travel-OTH {travel_kind} {multiplier:.1f}"
         earnings = None if rate in (None, "") else round((mins / 60) * float(rate) * multiplier, 2)
         travel_result.append({"id": t["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
-                              "category": label, "multiplier": multiplier,
+                              "category": label, "pay_code": pay_code, "multiplier": multiplier,
                               "estimated_earnings": earnings, "notes": t.get("notes", "")})
 
     total_hours = round(sum(x["hours"] for x in result if not x["is_travelling"]), 2)

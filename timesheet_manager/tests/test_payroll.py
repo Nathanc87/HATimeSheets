@@ -233,5 +233,21 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["estimated_payg"], 150)
         self.assertEqual(result["estimated_net"], 1450)
 
+    def test_travel_pay_codes_distinguish_ordinary_and_overtime(self):
+        settings = {"base_rate": 40, "week_start_day": 0,
+                    "overtime_tiers": [
+                        {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
+                        {"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1.5x"}],
+                    "travel_loading": 0.3, "travel_rules": [], "penalty_rules": []}
+        shifts = [
+            {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
+             "finish_time": "01:00", "break_minutes": 0, "is_overseas": True},
+        ]
+        result = calculate(shifts, [], settings)
+        segment = result["shifts"][0]["segments"][0]
+        self.assertEqual(segment["pay_code"], "Travel-OTH Ordinary 1.3")
+        self.assertEqual(segment["multiplier"], 1.3)
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 52)
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.22] - 2026-11-16
+
+### Changed
+- Simplified the dashboard to show total paid work and travel hours, estimated gross and estimated take-home pay for the selected week.
+- Added previous/next week navigation and a clear week-ending date label.
+
+
 ## [0.1.21] - 2026-11-16
 
 ### Changed

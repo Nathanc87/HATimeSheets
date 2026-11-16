@@ -83,7 +83,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         if travelling:
             payable_minutes = min(mins, 600)
             segments = ([{"category": "Travel", "hours": round(payable_minutes / 60, 4),
-                          "multiplier": 1.3}] if payable_minutes else [])
+                          "multiplier": float(settings.get("travel_multiplier", 1.3))}] if payable_minutes else [])
         cursor = 0
         remaining = 0 if travelling else mins
         while remaining > 0:

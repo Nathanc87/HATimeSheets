@@ -2,6 +2,15 @@
 
 All notable changes to HATimeSheets are documented here.
 
+## [0.1.5] - 2026-11-16
+
+### Changed
+- Exposed the travel pay multiplier as a direct setting, matching the capped travel-entry pay rule rather than exposing legacy travel tiers.
+- Applied the configured travel multiplier to travel time entries; the 10-hour cap and exclusion from weekly overtime remain in place.
+
+### Fixed
+- Corrected the Excel export's elapsed-hours calculation to use time-in followed by time-out.
+
 ## [0.1.4] - 2026-11-16
 
 ### Added

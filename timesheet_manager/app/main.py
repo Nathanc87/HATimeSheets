@@ -267,7 +267,7 @@ def export_xlsx(start: str | None = None, end: str | None = None):
     rate_totals = {}
     for item in result["shifts"]:
         s = shift_map[item["id"]]
-        paid_minutes = max(0, minutes_between(s["finish_time"], s["start_time"]) - int(s.get("break_minutes", 0)))
+        paid_minutes = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
         payable_minutes = min(paid_minutes, 600) if item["is_travelling"] else paid_minutes
         total_hours += payable_minutes / 60
         breakdown = "; ".join("{}: {:.2f}h @ {:.2f}x".format(seg["category"], seg["hours"], seg["multiplier"]) for seg in item.get("segments", []))
@@ -302,4 +302,4 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.4"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.5"}

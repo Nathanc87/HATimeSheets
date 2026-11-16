@@ -56,6 +56,9 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     rate = settings.get("base_rate")
     schedule = settings.get("normal_hours_schedule")
     loading = float(settings.get("travel_loading", 0.3))
+    code_labels = {"ordinary_1_0":"Ordinary 1.0","ordinary_1_5":"Ordinary 1.5","overtime_1_5":"Overtime 1.5","overtime_2_0":"Overtime 2.0","public_holiday":"Public Holiday","travel_ordinary":"Travel-OTH Ordinary","travel_overtime":"Travel-OTH OT","annual_leave":"Annual Leave","sick_leave":"Sick Leave"}
+    code_labels.update(settings.get("payroll_codes", {}) or {})
+    def code(key): return str(code_labels.get(key) or key)
     result, normalized, by_week = [], [], {}
 
     for s in shifts:
@@ -100,13 +103,13 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         segments = []
         payable_minutes = min(mins, 600) if travelling else mins
         if is_leave:
-            leave_label = "Annual Leave" if s.get("leave_type") == "annual_leave" else "Sick Leave"
+            leave_label = code("annual_leave") if s.get("leave_type") == "annual_leave" else code("sick_leave")
             segments = [{"category": leave_label, "pay_code": leave_label, "hours": 10.0, "multiplier": 1.0}]
         elif travelling:
             base, tier_label = tier_at(earlier)
             if payable_minutes:
                 travel_kind = "OT" if "overtime" in str(tier_label).lower() or str(tier_label).lower().startswith("ot") else "Ordinary"
-                segments = [{"category": "Travel", "pay_code": f"Travel-OTH {travel_kind} {base + loading:.1f}",
+                segments = [{"category": "Travel", "pay_code": f"{code('travel_overtime' if travel_kind == 'OT' else 'travel_ordinary')} {base + loading:.1f}",
                              "hours": round(payable_minutes / 60, 4), "multiplier": base + loading}]
         else:
             # The entry model stores break duration, not its timestamp; deduct it at shift end.
@@ -131,19 +134,19 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                     multiplier += loading
                 if overseas:
                     travel_kind = "OT" if daily_overtime or "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
-                    pay_code = f"Travel-OTH {travel_kind} {multiplier:.1f}"
+                    pay_code = f"{code('travel_overtime' if travel_kind == 'OT' else 'travel_ordinary')} {multiplier:.1f}"
                 elif category == "Out-of-hours":
-                    pay_code = "Ordinary 1.5"
+                    pay_code = code("ordinary_1_5")
                 elif "public holiday" in str(label).lower():
-                    pay_code = "Public Holiday"
+                    pay_code = code("public_holiday")
                 elif category == "Ordinary" and multiplier <= 1.0:
-                    pay_code = "Ordinary 1.0"
+                    pay_code = code("ordinary_1_0")
                 elif "ordinary" in str(label).lower() and multiplier <= 1.5:
                     pay_code = "Ordinary 1.5"
                 elif multiplier >= 1.99:
-                    pay_code = "Overtime 2.0"
+                    pay_code = code("overtime_2_0")
                 elif multiplier >= 1.49:
-                    pay_code = "Overtime 1.5"
+                    pay_code = code("overtime_1_5")
                 else:
                     pay_code = str(label)
                 if segments and segments[-1]["category"] == category and segments[-1].get("pay_code") == pay_code and abs(segments[-1]["multiplier"] - multiplier) < 1e-8:
@@ -240,7 +243,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         if value:
             allowance_breakdown.append({"name": rule.get("name", "Allowance"),
                                         "frequency": frequency, "basis": basis,
-                                        "amount": round(value, 2)})
+                                        "unit_amount": round(amount, 2), "amount": round(value, 2)})
             allowance_total += value
 
     for entry in allowance_entries:
@@ -248,7 +251,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         if value:
             allowance_breakdown.append({"name": entry.get("name", "Allowance entry"),
                                         "frequency": "entry", "basis": entry.get("entry_date", ""),
-                                        "amount": round(value, 2)})
+                                        "unit_amount": round(value, 2), "amount": round(value, 2)})
             allowance_total += value
 
     estimated_gross = round(work_pay + travel_pay + allowance_total, 2) if earnings_known else None

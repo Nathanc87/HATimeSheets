@@ -20,11 +20,44 @@ let reportWeekStart=null,reportWeekStartDay=null;
 async function initialiseReportWeek(){settings=await api("api/settings");const day=Number(settings.week_start_day??0);if(!reportWeekStart||reportWeekStartDay!==day){const now=new Date();reportWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);reportWeekStart.setDate(reportWeekStart.getDate()-((reportWeekStart.getDay()+6-day)%7));reportWeekStartDay=day}const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end)}
 function shiftReportWeek(amount){if(!reportWeekStart)return;reportWeekStart.setDate(reportWeekStart.getDate()+amount*7);const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport()}
 function shiftDashboardWeek(amount){if(!dashboardWeekStart)return;dashboardWeekStart.setDate(dashboardWeekStart.getDate()+amount*7);loadDashboard()}
-async function loadDashboard(){try{settings=await api("api/settings");const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";$("#recent-shifts").innerHTML=shifts.slice(0,5).map(s=>recordHtml(s.work_date,s.start_time+"–"+s.finish_time,s.notes||"No notes",hours((Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0))*(s.is_travelling?Math.min(1,600/Math.max(1,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0))):1))/60))).join("")||'<div class="empty">No shifts recorded yet.</div>';}catch(e){toast("Could not load dashboard: "+e.message)}}
+async function loadDashboard(){try{settings=await api("api/settings");const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
+function earningsChartHtml(report){
+ const totals={};
+ (report.shifts||[]).forEach(s=>(s.segments||[]).forEach(seg=>{
+  const label=seg.pay_code||seg.category||"Other";
+  const value=Number(seg.hours||0)*Number(report.base_rate||0)*Number(seg.multiplier||1);
+  if(value>0)totals[label]=(totals[label]||0)+value;
+ }));
+ (report.travel||[]).forEach(t=>{const value=Number(t.estimated_earnings||0);if(value>0){const label=t.pay_code||"Travel";totals[label]=(totals[label]||0)+value}});
+ if(Number(report.total_allowances||0)>0)totals.Allowances=(totals.Allowances||0)+Number(report.total_allowances);
+ const items=Object.entries(totals).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+ const total=items.reduce((sum,x)=>sum+x[1],0);
+ if(!total)return '<div class="empty">No earnings recorded for this period.</div>';
+ const colors=["#2787b8","#56a36c","#d49b32","#a477c5","#d16d6d","#4caaa5","#8b9bb0","#c17b43","#7794d1","#b5a34b"];
+ let angle=0;
+ const slices=items.map(([name,value],i)=>{const start=angle;angle+=value/total*360;return colors[i%colors.length]+" "+start.toFixed(2)+"deg "+angle.toFixed(2)+"deg"}).join(",");
+ const legend=items.map(([name,value],i)=>'<div class="earnings-legend-row"><i style="background:'+colors[i%colors.length]+'"></i><span>'+esc(name)+'</span><b>'+money(value)+'</b><small>'+((value/total)*100).toFixed(1)+'%</small></div>').join("");
+ return '<div class="earnings-chart-layout"><div class="earnings-pie" style="background:conic-gradient('+slices+')"><div><strong>'+money(total)+'</strong><small>Total earnings</small></div></div><div class="earnings-legend">'+legend+'</div></div>';
+}
+function fyRange(){
+ const now=new Date(),year=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;
+ return {start:year+"-07-01",end:dateText(now)};
+}
+async function loadYearEarningsChart(){
+ const p=fyRange();
+ try{const r=await api("api/report?start="+p.start+"&end="+p.end);$("#year-earnings-chart").innerHTML=earningsChartHtml(r)}
+ catch(e){$("#year-earnings-chart").innerHTML='<div class="empty">Could not load earnings.</div>'}
+}
+async function loadSelectedEarningsChart(){
+ const start=$("#dashboard-chart-start").value,end=$("#dashboard-chart-end").value;
+ if(!start||!end||start>end){$("#selected-earnings-chart").innerHTML='<div class="empty">Choose a valid date range.</div>';return}
+ try{const r=await api("api/report?start="+start+"&end="+end);$("#selected-earnings-chart").innerHTML=earningsChartHtml(r)}
+ catch(e){$("#selected-earnings-chart").innerHTML='<div class="empty">Could not load earnings.</div>'}
+}
 function timeMins(f,s){let [fh,fm]=f.split(":").map(Number),[sh,sm]=s.split(":").map(Number);let n=fh*60+fm-(sh*60+sm);return n<=0?n+1440:n}
 function recordHtml(title,sub,note,right){return '<div class="record"><div><b>'+esc(title)+' · '+esc(sub)+'</b><small>'+esc(note)+'</small></div><div class="right"><b>'+right+'</b></div></div>'}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-$("#entry-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,d=formObject(f),id=d.entry_id;delete d.entry_id;d.break_minutes=Number(d.break_minutes||0);for(const k of ["is_public_holiday","is_travelling","is_overseas"])d[k]=f.elements[k].checked;try{await api(id?"api/shifts/"+id:"api/shifts",{method:id?"PUT":"POST",body:JSON.stringify(d)});toast(id?"Time entry updated":"Time entry saved");f.reset();showPage("shifts")}catch(err){toast("Save failed: "+err.message)}});
+$("#entry-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,d=formObject(f),id=d.entry_id;delete d.entry_id;d.break_minutes=Number(d.break_minutes||0);for(const k of ["is_public_holiday","is_travelling","is_overseas"])d[k]=f.elements[k].checked;d.leave_type=d.leave_type||"work";if(d.leave_type!=="work"){d.start_time="00:00";d.finish_time="10:00";d.break_minutes=0;d.is_travelling=false;d.is_overseas=false;d.is_public_holiday=false;}try{await api(id?"api/shifts/"+id:"api/shifts",{method:id?"PUT":"POST",body:JSON.stringify(d)});toast(id?"Time entry updated":"Time entry saved");f.reset();showPage("shifts")}catch(err){toast("Save failed: "+err.message)}});
 let shiftCalendarMonthDate=null;
 async function loadShifts(){
  const [rows,calendarSettings,holidays]=await Promise.all([api("api/shifts"),api("api/settings"),api("api/holidays")]);
@@ -75,8 +108,10 @@ function renderShiftCalendar(rows,config,holidays){
  root.innerHTML=out;
 }
 let shiftCache=[];
-function newEntry(){const f=$("#entry-form");f.reset();f.elements.entry_id.value="";f.elements.start_time.value="05:30";f.elements.finish_time.value="16:00";f.elements.break_minutes.value=30;f.elements.is_public_holiday.checked=false;f.elements.is_travelling.checked=false;f.elements.is_overseas.checked=false;$("#entry-heading").textContent="New time entry";$("#entry-save").textContent="Save time entry";setDefaultDates();showPage("entry")}
-function editShift(id){const s=shiftCache.find(x=>Number(x.id)===Number(id));if(!s)return;const f=$("#entry-form");f.elements.entry_id.value=s.id;f.elements.work_date.value=s.work_date;f.elements.start_time.value=s.start_time;f.elements.finish_time.value=s.finish_time;f.elements.break_minutes.value=s.break_minutes;f.elements.notes.value=s.notes||"";f.elements.is_public_holiday.checked=!!s.is_public_holiday;f.elements.is_travelling.checked=!!s.is_travelling;f.elements.is_overseas.checked=!!s.is_overseas;$("#entry-heading").textContent="Edit time entry";$("#entry-save").textContent="Save changes";showPage("entry")}
+function toggleLeaveFields(){const leave=$("#leave-type").value!=="work";$("#work-time-fields").hidden=leave;$("#leave-entry-note").hidden=!leave;const f=$("#entry-form");f.elements.start_time.required=!leave;f.elements.finish_time.required=!leave;}
+$("#leave-type").addEventListener("change",toggleLeaveFields);
+function newEntry(){const f=$("#entry-form");f.reset();f.elements.entry_id.value="";f.elements.start_time.value="05:30";f.elements.finish_time.value="16:00";f.elements.break_minutes.value=30;f.elements.is_public_holiday.checked=false;f.elements.is_travelling.checked=false;f.elements.is_overseas.checked=false;f.elements.leave_type.value="work";toggleLeaveFields();$("#entry-heading").textContent="New time entry";$("#entry-save").textContent="Save time entry";setDefaultDates();showPage("entry")}
+function editShift(id){const s=shiftCache.find(x=>Number(x.id)===Number(id));if(!s)return;const f=$("#entry-form");f.elements.entry_id.value=s.id;f.elements.work_date.value=s.work_date;f.elements.start_time.value=s.start_time;f.elements.finish_time.value=s.finish_time;f.elements.break_minutes.value=s.break_minutes;f.elements.notes.value=s.notes||"";f.elements.is_public_holiday.checked=!!s.is_public_holiday;f.elements.is_travelling.checked=!!s.is_travelling;f.elements.is_overseas.checked=!!s.is_overseas;f.elements.leave_type.value=s.leave_type||"work";toggleLeaveFields();$("#entry-heading").textContent="Edit time entry";$("#entry-save").textContent="Save changes";showPage("entry")}
 function cancelEntry(){showPage("shifts")}
 $("#entry-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,d=formObject(f),id=d.entry_id;delete d.entry_id;d.break_minutes=Number(d.break_minutes||0);for(const k of ["is_public_holiday","is_travelling","is_overseas"])d[k]=f.elements[k].checked;try{await api(id?"api/shifts/"+id:"api/shifts",{method:id?"PUT":"POST",body:JSON.stringify(d)});toast(id?"Time entry updated":"Time entry saved");f.reset();showPage("shifts")}catch(err){toast("Save failed: "+err.message)}});
 async function deleteShift(id){if(!confirm("Delete this time entry?"))return;await api("api/shifts/"+id,{method:"DELETE"});loadShifts();toast("Time entry deleted")}

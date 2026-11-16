@@ -178,7 +178,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         earnings = None if rate in (None, "") else round(sum(x["hours"] * float(rate) * x["multiplier"] for x in segments), 2)
         result.append({"id": s["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
                        "payable_hours": round(payable_minutes / 60, 4),
-                       "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)), "leave_type": s.get("leave_type", "work"),
+                       "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)), "is_public_holiday": bool(s.get("is_public_holiday", False)), "leave_type": s.get("leave_type", "work"),
                        "weekly_hours_including_shift": round((earlier + (0 if travelling else mins)) / 60, 4),
                        "segments": segments, "estimated_earnings": earnings,
                        "notes": s.get("notes", "")})
@@ -216,7 +216,10 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     allowance_breakdown = []
     allowance_total = 0.0
     work_weeks = {key for s, d, mins, key, travelling in normalized if not travelling and mins > 0}
-    ordinary_work_hours = sum(x["hours"] for x in result if not x["is_travelling"])
+    ordinary_work_hours = sum(x["hours"] for x in result
+                              if not x["is_travelling"]
+                              and x.get("leave_type", "work") == "work"
+                              and not x.get("is_public_holiday", False))
     allowance_hours = ordinary_work_hours + total_travel
     for rule in settings.get("allowances", []):
         amount = float(rule.get("amount", 0) or 0)
@@ -269,7 +272,12 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             if frequency == "hourly":
                 hours_by_week = {}
                 for item in result:
-                    paid = float(item["payable_hours"] if item["is_travelling"] else item["hours"])
+                    if item["is_travelling"]:
+                        paid = float(item["payable_hours"])
+                    elif item.get("leave_type", "work") != "work" or item.get("is_public_holiday", False):
+                        paid = 0.0
+                    else:
+                        paid = float(item["hours"])
                     if paid:
                         start = weekly_bucket_start(date.fromisoformat(item["date"]), week_start)
                         hours_by_week[start.isoformat()] = hours_by_week.get(start.isoformat(), 0) + paid

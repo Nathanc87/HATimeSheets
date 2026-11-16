@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.22</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.23</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -64,6 +64,11 @@
   <form id="settings-form" class="form settings-form">
     <h3>Base pay</h3>
     <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
+    <h3>Automatic attendance (Home Assistant)</h3>
+    <p class="hint">Choose a person or device tracker and one or more work zones. Moving between selected zones keeps one ordinary shift open. Leaving all work zones starts a grace period; the finish time remains the actual departure, rounded to the selected interval.</p>
+    <div class="form-row"><label>Presence entity<select name="presence_entity" id="presence-entity"><option value="">Disabled</option></select></label><label>Work zones<select name="work_zone_entities" id="work-zone-entities" multiple size="4"></select></label></div>
+    <div class="form-row"><label>Zone-change grace period (minutes)<input name="presence_grace_minutes" type="number" min="0" max="240" value="30"></label><label>Default automatic start time<input name="presence_start_time" type="time" value="05:30"></label></div>
+    <div class="form-row"><label>Finish-time rounding (minutes)<select name="presence_rounding_minutes"><option value="5">5</option><option value="10">10</option><option value="15" selected>15</option><option value="30">30</option></select></label><div><span class="hint" id="presence-status">Loading Home Assistant entities…</span></div></div>
     <h3>Pay cycle</h3>
     <div class="form-row"><label>Cycle type<select name="pay_cycle_type"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom days</option></select></label><label>Cycle anchor / first day<input name="pay_cycle_start_date" type="date"></label></div>
     <div class="form-row"><label>Custom cycle length (days)<input name="custom_cycle_days" type="number" min="1" value="14"></label><label>Overtime week starts<select name="week_start_day"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></label></div>

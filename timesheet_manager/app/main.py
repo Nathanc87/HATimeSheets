@@ -294,9 +294,9 @@ def export_csv(start: str | None = None, end: str | None = None):
                          round(payable_minutes / 60, 2), breakdown, kind, "Yes" if item["is_overseas"] else "No", item["notes"]])
     writer.writerow([])
     writer.writerow(["ALLOWANCES"])
-    writer.writerow(["Allowance", "Frequency", "Basis", "Amount"])
+    writer.writerow(["Allowance", "Allowance amount", "Frequency", "Basis", "Period amount"])
     for item in result.get("allowances", []):
-        writer.writerow([item["name"], item["frequency"], item["basis"], item["amount"]])
+        writer.writerow([item["name"], item.get("unit_amount", item["amount"]), item["frequency"], item["basis"], item["amount"]])
     writer.writerow([])
     writer.writerow(["PERIOD TOTALS"])
     writer.writerow(["Rate category", "Hours"])

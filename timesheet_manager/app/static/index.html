@@ -86,7 +86,7 @@
     <h3>Allowances</h3><p class="hint">Allowances are included in estimated gross: hourly applies to paid work and travel hours, weekly once per work week, and fixed once per work shift.</p>
     <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
     <h3>Estimated weekly income tax</h3>
-    <p class="hint">Each week's gross is annualised (weekly gross × 52), annual resident tax is calculated using the selected financial year's brackets, then divided by 52. Medicare levy is not included.</p>
+    <p class="hint">Weekly PAYG uses the selected financial year's ATO Scale 1 or Scale 2 coefficients when available; these include the standard Medicare levy. Annual resident tax brackets are used only as a fallback when weekly coefficients are unavailable. HELP and Medicare levy surcharge are not included.</p>
     <label>Additional withholding per week ($)<input name="payg_extra_withholding" type="number" min="0" step="1" value="0"></label>
     <div class="payg-editor">
       <div class="form-row payg-year-row"><label>Financial year<select id="payg-financial-year"></select></label><div class="payg-add-year"><label>New financial year<input id="payg-new-year" type="text" placeholder="2027-28" pattern="[0-9]{4}-[0-9]{2}"></label><button type="button" class="secondary" onclick="addPaygYear()">+ Add year</button></div></div>

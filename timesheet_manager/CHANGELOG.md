@@ -1,3 +1,9 @@
+## [0.1.33] - 2026-11-16
+
+### Changed
+- Make calendar days clickable to edit an existing entry or create a new entry for that date.
+- Display each hours-by-rate breakdown on its own line in reports.
+
 ## [0.1.32] - 2026-11-16
 
 ### Added

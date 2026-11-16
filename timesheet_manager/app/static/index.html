@@ -44,6 +44,7 @@
       <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Entry type<select name="leave_type" id="leave-type"><option value="work">Work</option><option value="annual_leave">Annual leave (10 hours)</option><option value="sick_leave">Sick leave (10 hours)</option></select></label></div>
       <div id="work-time-fields"><div class="form-row"><label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" max="1440" value="30"></label><label>Time in<input name="start_time" type="time" value="05:30" required></label><label>Time out<input name="finish_time" type="time" value="16:00" required></label></div></div>
       <p id="leave-entry-note" class="hint" hidden>Leave entries are automatically recorded as 10 paid hours. No start, finish or break times are needed.</p>
+      <label>Project<select name="project" id="entry-project"><option value="">No project</option></select></label>
       <label>Work notes / job description<textarea name="notes" rows="5" placeholder="Work completed, job details, site, issues..."></textarea></label>
       <div class="entry-options">
         <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
@@ -57,9 +58,10 @@
 <section id="reports" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Timesheet report</h2><p>Daily attendance record for the selected pay period</p></div></div>
   <div class="report-week-nav"><button class="small-btn" type="button" onclick="shiftReportWeek(-1)">← Previous week</button><strong id="report-week-label">Week —</strong><button class="small-btn" type="button" onclick="shiftReportWeek(1)">Next week →</button></div>
-  <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><button class="secondary report-apply" onclick="loadReport()">Apply dates</button></div>
+  <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><label>Project<select id="report-project"><option value="">All projects</option></select></label><button class="secondary report-apply" onclick="loadReport()">Apply filters</button></div>
   <div class="table-wrap timesheet-wrap" id="report-timesheet"></div>
-  <div class="allowance-report"><h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
+  <div class="allowance-report"><h3>Projects</h3><p class="hint">Create projects here, then assign them to time entries and filter reports by project.</p><div id="project-list" class="rule-editor"></div><div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
+    <h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
   <div class="timesheet-total" id="report-totals"></div>
   <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
   <p class="hint">The timesheet lists each day once. Allowances are itemised separately below and on their own Excel sheet.</p></article>

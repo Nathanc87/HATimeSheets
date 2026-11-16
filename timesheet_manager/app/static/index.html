@@ -14,15 +14,20 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.21</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.22</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
 <section id="dashboard" class="page active">
+  <div class="dashboard-week-nav">
+    <button class="small-btn" type="button" onclick="shiftDashboardWeek(-1)">← Previous week</button>
+    <strong id="dashboard-week-label">Week ending —</strong>
+    <button class="small-btn" type="button" onclick="shiftDashboardWeek(1)">Next week →</button>
+  </div>
   <div class="cards">
-    <article class="stat"><span>Hours this week</span><strong id="week-hours">—</strong><small>Paid work hours</small></article>
-    <article class="stat"><span>Travel hours (capped)</span><strong id="travel-hours">—</strong><small>Recorded travel</small></article>
+    <article class="stat"><span>Total hours</span><strong id="week-hours">—</strong><small>Work and paid travel</small></article>
     <article class="stat"><span>Estimated gross</span><strong id="gross">Not configured</strong><small id="gross-note">Set your hourly rate in Settings</small></article>
+    <article class="stat"><span>Estimated take-home</span><strong id="take-home">Not configured</strong><small id="take-home-note">Based on weekly PAYG withholding</small></article>
   </div>
   <article class="panel"><div class="panel-head"><div><h2>Recent shifts</h2><p>Your latest recorded work</p></div><button class="small-btn" onclick="showPage('shifts')">View all</button></div><div id="recent-shifts" class="record-list"></div></article>
 </section>

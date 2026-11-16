@@ -77,5 +77,32 @@ class PayrollTests(unittest.TestCase):
         result = calculate([shift], [], settings)
         self.assertEqual(result["total_work_hours"], 10)
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
+
+    def test_configured_allowances_are_included_in_gross(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [],
+                    "allowances": [
+                        {"name": "Site", "amount": 2, "frequency": "hourly"},
+                        {"name": "Weekly tool", "amount": 50, "frequency": "weekly"},
+                        {"name": "Meal", "amount": 15, "frequency": "fixed"}]}
+        shifts = [
+            {"id": 1, "work_date": "2026-11-16", "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+            {"id": 2, "work_date": "2026-11-17", "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+            {"id": 3, "work_date": "2026-11-18", "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30, "is_travelling": True}
+        ]
+        result = calculate(shifts, [], settings, [], [{"entry_date":"2026-11-16","name":"Reimbursement","amount":25}])
+        self.assertEqual(result["total_allowances"], 130)
+        self.assertEqual(result["estimated_gross"], 930)
+        self.assertEqual(len(result["allowances"]), 4)
+
+    def test_allowances_are_reported_without_base_rate_but_gross_is_unknown(self):
+        settings = {"base_rate": None, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [],
+                    "allowances": [{"name":"Weekly","amount":30,"frequency":"weekly"}]}
+        shift = {"id":1,"work_date":"2026-11-16","start_time":"05:30","finish_time":"16:00","break_minutes":30}
+        result = calculate([shift], [], settings)
+        self.assertEqual(result["total_allowances"], 30)
+        self.assertIsNone(result["estimated_gross"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,10 @@
     <article class="stat"><span>Estimated gross</span><strong id="gross">Not configured</strong><small id="gross-note">Set your hourly rate in Settings</small></article>
     <article class="stat"><span>Estimated take-home</span><strong id="take-home">Not configured</strong><small id="take-home-note">Based on weekly PAYG withholding</small></article>
   </div>
-  <article class="panel"><div class="panel-head"><div><h2>Recent shifts</h2><p>Your latest recorded work</p></div><button class="small-btn" onclick="showPage('shifts')">View all</button></div><div id="recent-shifts" class="record-list"></div></article>
+  <div class="grid-two dashboard-charts">
+  <article class="panel"><div class="panel-head"><div><h2>Financial year earnings</h2><p>Estimated dollars by pay rate and allowances</p></div></div><div id="year-earnings-chart" class="earnings-chart"></div></article>
+  <article class="panel"><div class="panel-head"><div><h2>Selected dates</h2><p>Estimated dollars by pay rate and allowances</p></div></div><div class="date-range-picker"><label>From<input id="dashboard-chart-start" type="date"></label><label>To<input id="dashboard-chart-end" type="date"></label><button class="small-btn" type="button" onclick="loadSelectedEarningsChart()">Apply dates</button></div><div id="selected-earnings-chart" class="earnings-chart"></div></article>
+</div>
 </section>
 <section id="shifts" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Review, edit or delete recorded shifts</p></div><button class="primary" onclick="newEntry()">+ Add time entry</button></div><div class="calendar-nav"><button class="small-btn" type="button" onclick="shiftCalendarMonth(-1)">← Previous</button><strong id="shift-calendar-label"></strong><button class="small-btn" type="button" onclick="shiftCalendarMonth(1)">Next →</button></div><div id="shift-calendar" class="shift-calendar" aria-label="Monthly time entry hours calendar"></div><div class="calendar-legend"><span><i class="legend-dot has-hours"></i> Hours recorded</span><span><i class="legend-dot missing-hours"></i> Past scheduled day with no hours</span></div><div id="shift-list" class="table-wrap"></div></article>
@@ -38,8 +41,9 @@
   <article class="panel entry-panel"><div class="panel-head"><div><h2 id="entry-heading">New time entry</h2><p>Record a work day or travel entry</p></div></div>
     <form id="entry-form" class="form entry-form">
       <input type="hidden" name="entry_id" value="">
-      <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" max="1440" value="30"></label></div>
-      <div class="form-row"><label>Time in<input name="start_time" type="time" value="05:30" required></label><label>Time out<input name="finish_time" type="time" value="16:00" required></label></div>
+      <div class="form-row"><label>Date<input name="work_date" type="date" required></label><label>Entry type<select name="leave_type" id="leave-type"><option value="work">Work</option><option value="annual_leave">Annual leave (10 hours)</option><option value="sick_leave">Sick leave (10 hours)</option></select></label></div>
+      <div id="work-time-fields"><div class="form-row"><label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" max="1440" value="30"></label><label>Time in<input name="start_time" type="time" value="05:30" required></label><label>Time out<input name="finish_time" type="time" value="16:00" required></label></div></div>
+      <p id="leave-entry-note" class="hint" hidden>Leave entries are automatically recorded as 10 paid hours. No start, finish or break times are needed.</p>
       <label>Work notes / job description<textarea name="notes" rows="5" placeholder="Work completed, job details, site, issues..."></textarea></label>
       <div class="entry-options">
         <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>

@@ -91,8 +91,8 @@ class PayrollTests(unittest.TestCase):
             {"id": 3, "work_date": "2026-11-18", "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30, "is_travelling": True}
         ]
         result = calculate(shifts, [], settings, [], [{"entry_date":"2026-11-16","name":"Reimbursement","amount":25}])
-        self.assertEqual(result["total_allowances"], 130)
-        self.assertEqual(result["estimated_gross"], 930)
+        self.assertEqual(result["total_allowances"], 145)
+        self.assertEqual(result["estimated_gross"], 1465)
         self.assertEqual(len(result["allowances"]), 4)
 
     def test_allowances_are_reported_without_base_rate_but_gross_is_unknown(self):

@@ -49,5 +49,33 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["total_work_hours"], 10)
         self.assertIsNone(result["estimated_gross"])
 
+    def test_travelling_entry_is_capped_at_10_hours_and_1_3x(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [
+            {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
+            {"after_hours": 38, "multiplier": 2.0, "label": "OT"}],
+            "travel_rules": [], "penalty_rules": [
+                {"name": "Sunday", "enabled": True, "condition": "day_of_week",
+                 "day": 6, "scope": "work", "multiplier": 3.0, "mode": "replace"}]}
+        shift = {"id": 1, "work_date": "2026-11-22", "start_time": "05:00",
+                 "finish_time": "18:00", "break_minutes": 0, "is_travelling": True,
+                 "is_overseas": True, "notes": ""}
+        result = calculate([shift], [], settings)
+        entry = result["shifts"][0]
+        self.assertEqual(entry["hours"], 13)
+        self.assertEqual(entry["payable_hours"], 10)
+        self.assertEqual(entry["segments"], [{"category": "Travel", "hours": 10.0, "multiplier": 1.3}])
+        self.assertEqual(entry["estimated_earnings"], 520)
+        self.assertTrue(entry["is_overseas"])
+        self.assertEqual(result["total_work_hours"], 0)
+        self.assertEqual(result["total_travel_hours"], 10)
+
+    def test_overseas_flag_does_not_change_normal_pay(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": []}
+        shift = {"id": 1, "work_date": "2026-11-16", "start_time": "05:30",
+                 "finish_time": "16:00", "break_minutes": 30, "is_overseas": True, "notes": ""}
+        result = calculate([shift], [], settings)
+        self.assertEqual(result["total_work_hours"], 10)
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
 if __name__ == "__main__":
     unittest.main()

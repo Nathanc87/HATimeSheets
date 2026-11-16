@@ -321,24 +321,46 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
 
 def calculate_weekly_payg(gross, year_settings, claim_tax_free_threshold=True,
                           help_enabled=False, extra_withholding=0):
-    """Apply ATO Schedule 1 and Schedule 8 weekly withholding coefficients."""
+    """Estimate weekly income tax from annual resident brackets; Medicare levy excluded."""
     if not year_settings:
         return None
-    earnings = max(0, float(gross))
+    earnings = max(0.0, float(gross))
+    extra = _round_dollar(max(0, float(extra_withholding or 0)))
+    brackets = year_settings.get("resident_brackets") or year_settings.get("brackets")
+    if brackets:
+        annual_income = earnings * 52
+        annual_tax = calculate_annual_resident_tax(annual_income, brackets)
+        payg = _round_dollar(annual_tax / 52)
+        total = payg + extra
+        return {"payg": payg, "help": 0, "extra": extra,
+                "total_withheld": total, "net": round(earnings - total, 2)}
+    # Backward compatibility for installations with saved ATO coefficient tables.
     x = int(earnings) + 0.99
     scale = "scale2" if claim_tax_free_threshold else "scale1"
-    payg = _coefficient_withholding(x, year_settings.get(scale, []))
+    payg = _round_dollar(_coefficient_withholding(x, year_settings.get(scale, [])))
     help_amount = 0
     if help_enabled:
         help_scale = "help_scale2" if claim_tax_free_threshold else "help_scale1"
-        help_amount = _coefficient_withholding(x, year_settings.get(help_scale, []))
-    extra = max(0, float(extra_withholding or 0))
-    payg = _round_dollar(payg)
-    help_amount = _round_dollar(help_amount)
-    extra = _round_dollar(extra)
+        help_amount = _round_dollar(_coefficient_withholding(x, year_settings.get(help_scale, [])))
     total = payg + help_amount + extra
     return {"payg": payg, "help": help_amount, "extra": extra,
             "total_withheld": total, "net": round(earnings - total, 2)}
+
+
+def calculate_annual_resident_tax(annual_income, brackets):
+    income = max(0.0, float(annual_income))
+    ordered = sorted(brackets, key=lambda row: float(row.get("lower", 0)))
+    applicable = None
+    for bracket in ordered:
+        if income >= float(bracket.get("lower", 0)):
+            applicable = bracket
+        else:
+            break
+    if applicable is None:
+        return 0.0
+    return max(0.0, float(applicable.get("base_tax", 0)) +
+               (income - float(applicable.get("lower", 0))) * float(applicable.get("rate", 0)))
+
 
 
 def _coefficient_withholding(x, brackets):

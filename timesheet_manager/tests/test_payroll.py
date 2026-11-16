@@ -1,6 +1,6 @@
 import unittest
 from datetime import date
-from app.payroll import minutes_between, weekly_bucket_start, calculate
+from app.payroll import minutes_between, weekly_bucket_start, calculate, calculate_weekly_payg
 
 class PayrollTests(unittest.TestCase):
     def test_normal_shift_minus_break(self):
@@ -193,6 +193,45 @@ class PayrollTests(unittest.TestCase):
         result = calculate([shift], [], settings)
         self.assertEqual(result["total_allowances"], 30)
         self.assertIsNone(result["estimated_gross"])
+
+
+    def test_ato_weekly_payg_with_tax_free_threshold_and_help(self):
+        rates = {"scale2": [
+            {"upper": 362, "a": 0, "b": 0},
+            {"upper": 538, "a": 0.15, "b": 54.3462},
+            {"upper": 673, "a": 0.25, "b": 108.2135},
+            {"upper": 721, "a": 0.17, "b": 54.3473},
+            {"upper": 865, "a": 0.179, "b": 60.8377},
+            {"upper": 1282, "a": 0.3227, "b": 185.1935},
+            {"upper": 2596, "a": 0.32, "b": 181.7319},
+            {"upper": 3653, "a": 0.39, "b": 363.4627},
+            {"upper": None, "a": 0.47, "b": 655.7704}],
+            "help_scale2": [
+            {"upper": 1337, "a": 0, "b": 0},
+            {"upper": 2494, "a": 0.15, "b": 200.5615},
+            {"upper": 3577, "a": 0.17, "b": 250.4527},
+            {"upper": None, "a": 0.10, "b": 0}]}
+        result = calculate_weekly_payg(2000, rates, True, True, 10)
+        self.assertEqual(result, {"payg": 459, "help": 100, "extra": 10,
+                                  "total_withheld": 569, "net": 1431.0})
+
+    def test_payg_is_calculated_per_week_and_summed_for_report(self):
+        rates = {"2026-27": {
+            "scale2": [{"upper": 362, "a": 0, "b": 0},
+                       {"upper": None, "a": 0.32, "b": 181.7319}],
+            "scale1": [{"upper": None, "a": 0.47, "b": 493.1893}],
+            "help_scale1": [], "help_scale2": []}}
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [], "allowances": [],
+                    "payg_years": rates, "payg_tax_free_threshold": True}
+        shifts = [
+            {"id": 1, "work_date": "2026-11-16", "start_time": "00:00", "finish_time": "20:00", "break_minutes": 0},
+            {"id": 2, "work_date": "2026-11-23", "start_time": "00:00", "finish_time": "20:00", "break_minutes": 0}]
+        result = calculate(shifts, [], settings)
+        self.assertEqual(len(result["payg_weeks"]), 2)
+        self.assertEqual([w["gross"] for w in result["payg_weeks"]], [800, 800])
+        self.assertEqual(result["estimated_payg"], 150)
+        self.assertEqual(result["estimated_net"], 1450)
 
 if __name__ == "__main__":
     unittest.main()

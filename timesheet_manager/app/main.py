@@ -250,7 +250,7 @@ def export_csv(start: str | None = None, end: str | None = None):
         writer.writerow([category, round(hours_value, 2)])
     writer.writerow(["Total paid hours", round(total_hours, 2)])
     writer.writerow(["Total allowances", result.get("total_allowances", 0)])
-    writer.writerow(["Estimated gross", result["estimated_gross"] if result["estimated_gross"] is not None else "Not configured"])
+    writer.writerow(["Estimated gross", result["estimated_gross"] if result["estimated_gross"] is not None else "Not configured"])\n    writer.writerow(["Estimated PAYG", result.get("estimated_payg") if result.get("estimated_payg") is not None else "Not configured"])\n    writer.writerow(["HELP withholding", result.get("estimated_help") if result.get("estimated_help") is not None else "Not configured"])\n    writer.writerow(["Total withheld", result.get("total_withheld") if result.get("total_withheld") is not None else "Not configured"])\n    writer.writerow(["Estimated take-home", result.get("estimated_net") if result.get("estimated_net") is not None else "Not configured"])
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=timesheet.csv"})
 
@@ -287,7 +287,7 @@ def export_xlsx(start: str | None = None, end: str | None = None):
         totals_sheet.append([category, round(hours_value, 2)])
     totals_sheet.append(["Total paid hours", round(total_hours, 2)])
     totals_sheet.append(["Total allowances", result.get("total_allowances", 0)])
-    totals_sheet.append(["Estimated gross", result["estimated_gross"]])
+    totals_sheet.append(["Estimated gross", result["estimated_gross"]])\n    totals_sheet.append(["Estimated PAYG", result.get("estimated_payg")])\n    totals_sheet.append(["HELP withholding", result.get("estimated_help")])\n    totals_sheet.append(["Total withheld", result.get("total_withheld")])\n    totals_sheet.append(["Estimated take-home", result.get("estimated_net")])
     for sheet in wb.worksheets:
         sheet.freeze_panes = "A2"
         sheet.auto_filter.ref = sheet.dimensions
@@ -302,4 +302,4 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.5"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.15"}

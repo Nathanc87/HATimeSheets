@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.15] - 2026-11-16
+
+### Added
+- Added weekly PAYG withholding estimates using the ATO 2026–27 Schedule 1 coefficients, with optional HELP withholding and extra weekly withholding.
+- Added editable financial-year coefficient tables, tax-free threshold selection and weekly gross-to-net reporting.
+- PAYG and estimated take-home amounts are included in CSV and Excel exports.
+
 All notable changes to HATimeSheets are documented here.
 
 ## [0.1.14] - 2026-11-16

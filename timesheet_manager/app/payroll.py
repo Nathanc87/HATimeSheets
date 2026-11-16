@@ -218,7 +218,117 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                                         "amount": round(value, 2)})
             allowance_total += value
 
+    estimated_gross = round(work_pay + travel_pay + allowance_total, 2) if earnings_known else None
+    weekly = {}
+    def week_record(day_text):
+        day = date.fromisoformat(day_text)
+        start = weekly_bucket_start(day, week_start)
+        return weekly.setdefault(start.isoformat(), {"start": start, "gross": 0.0})
+    if earnings_known:
+        for item in result:
+            if item["estimated_earnings"] is not None:
+                week_record(item["date"])["gross"] += item["estimated_earnings"]
+        for item in travel_result:
+            if item["estimated_earnings"] is not None:
+                week_record(item["date"])["gross"] += item["estimated_earnings"]
+        for rule in settings.get("allowances", []):
+            amount = float(rule.get("amount", 0) or 0)
+            if amount <= 0:
+                continue
+            frequency = rule.get("frequency", "weekly")
+            if frequency == "hourly":
+                hours_by_week = {}
+                for item in result:
+                    paid = float(item["payable_hours"] if item["is_travelling"] else item["hours"])
+                    if paid:
+                        start = weekly_bucket_start(date.fromisoformat(item["date"]), week_start)
+                        hours_by_week[start.isoformat()] = hours_by_week.get(start.isoformat(), 0) + paid
+                for item in travel_result:
+                    start = weekly_bucket_start(date.fromisoformat(item["date"]), week_start)
+                    hours_by_week[start.isoformat()] = hours_by_week.get(start.isoformat(), 0) + float(item["hours"])
+                for key, hours_value in hours_by_week.items():
+                    weekly.setdefault(key, {"start": date.fromisoformat(key), "gross": 0.0})["gross"] += hours_value * amount
+            elif frequency == "fixed":
+                counts = {}
+                for item in result:
+                    if not item["is_travelling"] and item["hours"] > 0:
+                        start = weekly_bucket_start(date.fromisoformat(item["date"]), week_start)
+                        counts[start.isoformat()] = counts.get(start.isoformat(), 0) + 1
+                for key, count in counts.items():
+                    weekly.setdefault(key, {"start": date.fromisoformat(key), "gross": 0.0})["gross"] += count * amount
+            else:
+                for key in work_weeks:
+                    weekly.setdefault(key, {"start": date.fromisoformat(key), "gross": 0.0})["gross"] += amount
+    for entry in allowance_entries:
+        amount = float(entry.get("amount", 0) or 0)
+        if amount:
+            start = weekly_bucket_start(date.fromisoformat(entry["entry_date"]), week_start)
+            weekly.setdefault(start.isoformat(), {"start": start, "gross": 0.0})["gross"] += amount
+    payg_weeks = []
+    for key, item in sorted(weekly.items()):
+        week_end = item["start"] + timedelta(days=6)
+        fy_start = week_end.year if week_end.month >= 7 else week_end.year - 1
+        fy_label = f"{fy_start}-{str(fy_start + 1)[-2:]}"
+        year_settings = settings.get("payg_years", {}).get(fy_label)
+        withholding = calculate_weekly_payg(
+            item["gross"], year_settings,
+            bool(settings.get("payg_tax_free_threshold", True)),
+            bool(settings.get("payg_help_enabled", False)),
+            float(settings.get("payg_extra_withholding", 0) or 0)
+        ) if earnings_known and year_settings else None
+        payg_weeks.append({"week_start": key, "week_end": week_end.isoformat(),
+            "financial_year": fy_label, "gross": round(item["gross"], 2),
+            "payg": withholding["payg"] if withholding else None,
+            "help": withholding["help"] if withholding else None,
+            "extra": withholding["extra"] if withholding else None,
+            "total_withheld": withholding["total_withheld"] if withholding else None,
+            "net": withholding["net"] if withholding else None})
+    withholding_known = bool(payg_weeks) and all(x["total_withheld"] is not None for x in payg_weeks)
+    total_payg = round(sum(x["payg"] for x in payg_weeks), 2) if withholding_known else None
+    total_help = round(sum(x["help"] for x in payg_weeks), 2) if withholding_known else None
+    total_extra = round(sum(x["extra"] for x in payg_weeks), 2) if withholding_known else None
+    total_withheld = round(sum(x["total_withheld"] for x in payg_weeks), 2) if withholding_known else None
+    net_pay = round(estimated_gross - total_withheld, 2) if estimated_gross is not None and withholding_known else None
     return {"shifts": result, "travel": travel_result, "total_work_hours": total_hours,
             "total_travel_hours": total_travel, "base_rate_configured": earnings_known,
             "allowances": allowance_breakdown, "total_allowances": round(allowance_total, 2),
-            "estimated_gross": round(work_pay + travel_pay + allowance_total, 2) if earnings_known else None}
+            "estimated_gross": estimated_gross, "payg_weeks": payg_weeks,
+            "estimated_payg": total_payg, "estimated_help": total_help,
+            "payg_extra_withholding": total_extra, "total_withheld": total_withheld,
+            "estimated_net": net_pay, "payg_configured": bool(settings.get("payg_years"))}
+
+def calculate_weekly_payg(gross, year_settings, claim_tax_free_threshold=True,
+                          help_enabled=False, extra_withholding=0):
+    """Apply ATO Schedule 1 and Schedule 8 weekly withholding coefficients."""
+    if not year_settings:
+        return None
+    earnings = max(0, float(gross))
+    x = int(earnings) + 0.99
+    scale = "scale2" if claim_tax_free_threshold else "scale1"
+    payg = _coefficient_withholding(x, year_settings.get(scale, []))
+    help_amount = 0
+    if help_enabled:
+        help_scale = "help_scale2" if claim_tax_free_threshold else "help_scale1"
+        help_amount = _coefficient_withholding(x, year_settings.get(help_scale, []))
+    extra = max(0, float(extra_withholding or 0))
+    payg = _round_dollar(payg)
+    help_amount = _round_dollar(help_amount)
+    extra = _round_dollar(extra)
+    total = payg + help_amount + extra
+    return {"payg": payg, "help": help_amount, "extra": extra,
+            "total_withheld": total, "net": round(earnings - total, 2)}
+
+
+def _coefficient_withholding(x, brackets):
+    for bracket in brackets:
+        upper = bracket.get("upper")
+        if upper is None or x < float(upper):
+            a = float(bracket.get("a", 0))
+            b = float(bracket.get("b", 0))
+            return max(0.0, a * x - b)
+    return 0.0
+
+
+def _round_dollar(value):
+    import math
+    return int(math.floor(float(value) + 0.5))

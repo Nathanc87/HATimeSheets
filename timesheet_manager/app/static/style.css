@@ -140,3 +140,10 @@
 .entry-day-nav{display:flex;gap:8px;flex-wrap:wrap}
 .entry-dirty-status{min-height:18px;margin:-10px 0 12px;color:#e5b65b;font-size:12px;font-weight:600}
 @media(max-width:560px){#entry .panel-head{align-items:flex-start;gap:12px;flex-direction:column}.entry-day-nav{width:100%}.entry-day-nav button{flex:1}}
+
+/* 0.1.43 make editor day navigation prominent and independently laid out */
+.entry-day-toolbar{display:grid;grid-template-columns:minmax(130px,1fr) minmax(120px,auto) minmax(130px,1fr);gap:12px;align-items:center;margin:0 0 18px;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px}
+.entry-day-toolbar button{min-height:42px;font-size:13px}
+.entry-day-toolbar button:last-child{text-align:right}
+.entry-day-toolbar span{text-align:center;color:var(--text);font-size:13px;font-weight:650}
+@media(max-width:560px){.entry-day-toolbar{grid-template-columns:1fr 1fr}.entry-day-toolbar span{grid-column:1/-1;grid-row:1}.entry-day-toolbar button{text-align:center!important}}

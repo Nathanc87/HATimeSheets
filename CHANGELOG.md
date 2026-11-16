@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.17] - 2026-11-16
+
+### Changed
+- Reorganised report totals into compact vertical sections for paid hours by rate, allowances and earnings, and tax and take-home pay.
+- Reduced summary typography and clarified weekly withholding rows.
+
 ## [0.1.16] - 2026-11-16
 
 ### Fixed

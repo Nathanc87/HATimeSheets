@@ -147,3 +147,10 @@
 .entry-day-toolbar button:last-child{text-align:right}
 .entry-day-toolbar span{text-align:center;color:var(--text);font-size:13px;font-weight:650}
 @media(max-width:560px){.entry-day-toolbar{grid-template-columns:1fr 1fr}.entry-day-toolbar span{grid-column:1/-1;grid-row:1}.entry-day-toolbar button{text-align:center!important}}
+
+
+/* 0.1.44 align time inputs and give the entry day a full weekday date */
+.entry-break-row{grid-template-columns:minmax(0,1fr)}
+.entry-time-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+.entry-day-toolbar span{line-height:1.4}
+@media(max-width:420px){.entry-time-row{grid-template-columns:1fr 1fr;gap:8px}}

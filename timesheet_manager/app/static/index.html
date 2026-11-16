@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.2</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.4</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -49,8 +49,8 @@
   <article class="panel"><div class="panel-head"><div><h2>Timesheet report</h2><p>Daily attendance record for the selected pay period</p></div></div>
   <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><button class="secondary report-apply" onclick="loadReport()">Apply dates</button></div>
   <div class="table-wrap timesheet-wrap" id="report-timesheet"></div>
-  <div class="timesheet-total" id="report-totals"></div>
   <div class="allowance-report"><h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
+  <div class="timesheet-total" id="report-totals"></div>
   <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
   <p class="hint">The timesheet lists each day once. Allowances are itemised separately below and on their own Excel sheet.</p></article>
 </section>
@@ -68,6 +68,8 @@
     <p class="hint">Default credit days are Monday–Thursday. The overtime treatment is deliberately left unconfigured until you confirm your agreement.</p>
     <h3>Overtime tiers</h3><p class="hint">Each tier applies once accumulated weekly work hours reach its threshold. The highest reached tier applies.</p>
     <div id="overtime-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('overtime')">+ Add overtime tier</button>
+    <h3>Travel rate tiers</h3><p class="hint">Travel entries use these multipliers and remain separate from ordinary weekly overtime.</p>
+    <div id="travel-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('travel')">+ Add travel rate tier</button>
     <h3>Penalty rules</h3><p class="hint">Day-of-week and public-holiday replacement/additional rules.</p>
     <div id="penalty-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('penalty')">+ Add penalty rule</button>
     <h3>Allowances</h3><p class="hint">Allowances are included in estimated gross: hourly applies per paid work hour, weekly once per work week, and fixed once per work shift. Travel entries are excluded.</p>

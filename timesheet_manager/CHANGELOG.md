@@ -2,6 +2,17 @@
 
 All notable changes to HATimeSheets are documented here.
 
+## [0.1.4] - 2026-11-16
+
+### Added
+- Added editable travel rate tiers to Payroll Settings, including thresholds and decimal multipliers.
+- Added per-day rate category/hour breakdowns to the timesheet report and exports.
+- Moved allowances before the period totals so totals appear at the bottom of the report.
+- Added a totals breakdown by ordinary, overtime and penalty category to the CSV and Excel exports.
+
+### Fixed
+- Travel rate tiers are now loaded into the settings editor and saved back to payroll settings.
+
 ## [0.1.3] - 2026-11-16
 
 ### Fixed

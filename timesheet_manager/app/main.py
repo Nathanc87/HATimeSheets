@@ -222,26 +222,34 @@ def export_csv(start: str | None = None, end: str | None = None):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["TIMESHEET"])
-    writer.writerow(["Date", "Time in", "Time out", "Unpaid break (minutes)", "Total paid hours", "Entry type", "Overseas", "Notes"])
+    writer.writerow(["Date", "Time in", "Time out", "Unpaid break (minutes)", "Total paid hours", "Rate breakdown", "Entry type", "Overseas", "Notes"])
     shift_map = {s["id"]: s for s in shifts}
     total_hours = 0.0
+    rate_totals = {}
     for item in result["shifts"]:
         s = shift_map[item["id"]]
         paid_minutes = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
         payable_minutes = min(paid_minutes, 600) if item["is_travelling"] else paid_minutes
         total_hours += payable_minutes / 60
+        breakdown = "; ".join("{}: {:.2f}h @ {:.2f}x".format(seg["category"], seg["hours"], seg["multiplier"]) for seg in item.get("segments", []))
+        for seg in item.get("segments", []):
+            key = "{} ({:.2f}x)".format(seg["category"], seg["multiplier"])
+            rate_totals[key] = rate_totals.get(key, 0) + float(seg["hours"])
         kind = "Travel" if item["is_travelling"] else ("Public holiday" if s.get("is_public_holiday") else "Work")
         writer.writerow([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
-                         round(payable_minutes / 60, 2), kind, "Yes" if item["is_overseas"] else "No", item["notes"]])
-    writer.writerow([])
-    writer.writerow(["Total paid hours", round(total_hours, 2)])
+                         round(payable_minutes / 60, 2), breakdown, kind, "Yes" if item["is_overseas"] else "No", item["notes"]])
     writer.writerow([])
     writer.writerow(["ALLOWANCES"])
     writer.writerow(["Allowance", "Frequency", "Basis", "Amount"])
     for item in result.get("allowances", []):
         writer.writerow([item["name"], item["frequency"], item["basis"], item["amount"]])
-    writer.writerow(["Total allowances", "", "", result.get("total_allowances", 0)])
     writer.writerow([])
+    writer.writerow(["PERIOD TOTALS"])
+    writer.writerow(["Rate category", "Hours"])
+    for category, hours_value in rate_totals.items():
+        writer.writerow([category, round(hours_value, 2)])
+    writer.writerow(["Total paid hours", round(total_hours, 2)])
+    writer.writerow(["Total allowances", result.get("total_allowances", 0)])
     writer.writerow(["Estimated gross", result["estimated_gross"] if result["estimated_gross"] is not None else "Not configured"])
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=timesheet.csv"})
@@ -253,32 +261,39 @@ def export_xlsx(start: str | None = None, end: str | None = None):
     wb = Workbook()
     ws = wb.active
     ws.title = "Timesheet"
-    ws.append(["Date", "Time in", "Time out", "Unpaid break (minutes)", "Total paid hours", "Entry type", "Overseas", "Notes"])
+    ws.append(["Date", "Time in", "Time out", "Unpaid break (minutes)", "Total paid hours", "Rate breakdown", "Entry type", "Overseas", "Notes"])
     shift_map = {s["id"]: s for s in shifts}
     total_hours = 0.0
+    rate_totals = {}
     for item in result["shifts"]:
         s = shift_map[item["id"]]
-        paid_minutes = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
+        paid_minutes = max(0, minutes_between(s["finish_time"], s["start_time"]) - int(s.get("break_minutes", 0)))
         payable_minutes = min(paid_minutes, 600) if item["is_travelling"] else paid_minutes
         total_hours += payable_minutes / 60
+        breakdown = "; ".join("{}: {:.2f}h @ {:.2f}x".format(seg["category"], seg["hours"], seg["multiplier"]) for seg in item.get("segments", []))
+        for seg in item.get("segments", []):
+            key = "{} ({:.2f}x)".format(seg["category"], seg["multiplier"])
+            rate_totals[key] = rate_totals.get(key, 0) + float(seg["hours"])
         kind = "Travel" if item["is_travelling"] else ("Public holiday" if s.get("is_public_holiday") else "Work")
         ws.append([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
-                   round(payable_minutes / 60, 2), kind, bool(item["is_overseas"]), item["notes"]])
-    ws.append([])
-    ws.append(["", "", "", "Total paid hours", round(total_hours, 2)])
+                   round(payable_minutes / 60, 2), breakdown, kind, bool(item["is_overseas"]), item["notes"]])
     allowance_sheet = wb.create_sheet("Allowances")
     allowance_sheet.append(["Allowance", "Frequency", "Basis", "Amount"])
     for item in result.get("allowances", []):
         allowance_sheet.append([item["name"], item["frequency"], item["basis"], item["amount"]])
-    allowance_sheet.append(["Total allowances", "", "", result.get("total_allowances", 0)])
-    allowance_sheet.append([])
-    allowance_sheet.append(["Estimated gross", "", "", result["estimated_gross"]])
+    totals_sheet = wb.create_sheet("Totals")
+    totals_sheet.append(["Rate category", "Hours"])
+    for category, hours_value in rate_totals.items():
+        totals_sheet.append([category, round(hours_value, 2)])
+    totals_sheet.append(["Total paid hours", round(total_hours, 2)])
+    totals_sheet.append(["Total allowances", result.get("total_allowances", 0)])
+    totals_sheet.append(["Estimated gross", result["estimated_gross"]])
     for sheet in wb.worksheets:
         sheet.freeze_panes = "A2"
         sheet.auto_filter.ref = sheet.dimensions
         for col in sheet.columns:
             letter = col[0].column_letter
-            sheet.column_dimensions[letter].width = min(42, max(12, max(len(str(c.value or "")) for c in col) + 2))
+            sheet.column_dimensions[letter].width = min(55, max(12, max(len(str(c.value or "")) for c in col) + 2))
     stream = io.BytesIO()
     wb.save(stream)
     stream.seek(0)
@@ -287,4 +302,4 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.3"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.4"}

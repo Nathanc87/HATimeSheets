@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.28</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.29</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -85,18 +85,17 @@
     <div id="penalty-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('penalty')">+ Add penalty rule</button>
     <h3>Allowances</h3><p class="hint">Allowances are included in estimated gross: hourly applies to paid work and travel hours, weekly once per work week, and fixed once per work shift.</p>
     <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
-    <h3>Weekly PAYG withholding</h3>
-    <div class="form-row"><label>Claim tax-free threshold<select name="payg_tax_free_threshold"><option value="true">Yes</option><option value="false">No</option></select></label></div>
+    <h3>Estimated weekly income tax</h3>
+    <p class="hint">Each week's gross is annualised (weekly gross × 52), annual resident tax is calculated using the selected financial year's brackets, then divided by 52. Medicare levy is not included.</p>
     <label>Additional withholding per week ($)<input name="payg_extra_withholding" type="number" min="0" step="1" value="0"></label>
     <div class="payg-editor">
       <div class="form-row payg-year-row"><label>Financial year<select id="payg-financial-year"></select></label><div class="payg-add-year"><label>New financial year<input id="payg-new-year" type="text" placeholder="2027-28" pattern="[0-9]{4}-[0-9]{2}"></label><button type="button" class="secondary" onclick="addPaygYear()">+ Add year</button></div></div>
-      <p class="hint">Choose a financial year, then edit its ATO weekly withholding brackets. Adding a year copies the currently selected year's brackets as a starting point; check and update them against the ATO tables before relying on them.</p>
-      <div class="payg-scales">
-        <div><h4>Scale 2 — claiming the tax-free threshold</h4><div id="payg-scale2" class="payg-brackets"></div><button type="button" class="secondary" onclick="addPaygBracket('scale2')">+ Add bracket</button></div>
-        <div><h4>Scale 1 — not claiming the tax-free threshold</h4><div id="payg-scale1" class="payg-brackets"></div><button type="button" class="secondary" onclick="addPaygBracket('scale1')">+ Add bracket</button></div>
-      </div>
-      <p class="hint">Each bracket uses weekly earnings upper limit, coefficient A and coefficient B from the ATO Schedule 1 weekly formula. Leave the final bracket's upper limit blank for no upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/payg-withholding-schedule-1-statement-of-formulas-for-calculating-amounts-to-be-withheld/coefficients-to-use-in-formulas-for-withholding-from-weekly-payments" target="_blank" rel="noopener">ATO weekly PAYG coefficients</a>.</p>
+      <p class="hint">Resident tax brackets: income boundaries, base tax and marginal rate.</p>
+      <div class="payg-bracket-head"><span>Income from ($)</span><span>Income to ($)</span><span>Base tax ($)</span><span>Rate (%)</span><span></span></div>
+      <div id="payg-resident-brackets" class="payg-brackets"></div>
+      <button type="button" class="secondary" onclick="addResidentBracket()">+ Add tax bracket</button>
     </div>
+    <p class="hint">The final bracket has no upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents" target="_blank" rel="noopener">ATO resident tax rates</a>.</p>
     <p class="hint">PAYG is estimated separately for each configured work week using the financial year containing that week's end date. Taxable gross includes earnings and allowances. This is not an EOFY assessment.</p>
     <div class="actions"><button class="primary">Save settings</button><span id="settings-status" class="hint"></span></div>
   </form></article>

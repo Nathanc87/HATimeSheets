@@ -1,3 +1,8 @@
+## [0.1.26] - 2026-11-16
+
+### Fixed
+- Updated the sidebar version label to match the add-on release version.
+
 ## [0.1.25] - 2026-11-16
 
 ### Fixed

@@ -60,8 +60,7 @@
   <div class="report-week-nav"><button class="small-btn" type="button" onclick="shiftReportWeek(-1)">← Previous week</button><strong id="report-week-label">Week —</strong><button class="small-btn" type="button" onclick="shiftReportWeek(1)">Next week →</button></div>
   <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><label>Project<select id="report-project"><option value="">All projects</option></select></label><button class="secondary report-apply" onclick="loadReport()">Apply filters</button></div>
   <div class="table-wrap timesheet-wrap" id="report-timesheet"></div>
-  <div class="allowance-report"><h3>Projects</h3><p class="hint">Create projects here, then assign them to time entries and filter reports by project.</p><div id="project-list" class="rule-editor"></div><div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
-    <h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
+  <div class="allowance-report"><h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>
   <div class="timesheet-total" id="report-totals"></div>
   <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
   <p class="hint">The timesheet lists each day once. Allowances are itemised separately below and on their own Excel sheet.</p></article>
@@ -69,6 +68,7 @@
 <section id="settings" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Payroll settings</h2><p>Configure your pay cycle and calculation rules. No hourly rate is assumed.</p></div></div>
   <form id="settings-form" class="form settings-form">
+    <h3>Projects</h3><p class="hint">Create and manage projects here. Assign them to time entries, then filter reports by project.</p><div id="project-list" class="rule-editor"></div><div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
     <h3>Base pay</h3>
     <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
     <h3>Automatic attendance (Home Assistant)</h3>

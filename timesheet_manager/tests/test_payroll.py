@@ -167,7 +167,7 @@ class PayrollTests(unittest.TestCase):
         result = calculate(shifts, [], settings, [], [{"entry_date":"2026-11-16","name":"Reimbursement","amount":25}])
         self.assertEqual(result["total_allowances"], 165)
         self.assertEqual(result["estimated_gross"], 1485)
-        self.assertEqual(result["allowances"][0]["basis"], "30.00 work and travel hours")
+        self.assertEqual(result["allowances"][0]["basis"], "30.00 Hours")
         self.assertEqual(len(result["allowances"]), 4)
 
     def test_hourly_allowance_includes_separate_travel_hours(self):
@@ -182,7 +182,7 @@ class PayrollTests(unittest.TestCase):
         result = calculate(shifts, travel, settings)
         self.assertEqual(result["total_work_hours"], 50)
         self.assertEqual(result["total_travel_hours"], 10)
-        self.assertEqual(result["allowances"][0]["basis"], "60.00 work and travel hours")
+        self.assertEqual(result["allowances"][0]["basis"], "60.00 Hours")
         self.assertEqual(result["total_allowances"], 120)
 
     def test_allowances_are_reported_without_base_rate_but_gross_is_unknown(self):
@@ -194,6 +194,19 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["total_allowances"], 30)
         self.assertIsNone(result["estimated_gross"])
 
+
+    def test_allowance_basis_labels_are_compact(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [],
+                    "allowances": [
+                        {"name": "Hourly", "amount": 2, "frequency": "hourly"},
+                        {"name": "Weekly", "amount": 20, "frequency": "weekly"},
+                        {"name": "Shift", "amount": 10, "frequency": "fixed"}]}
+        shift = {"id": 1, "work_date": "2026-11-16", "start_time": "05:30",
+                 "finish_time": "16:00", "break_minutes": 30}
+        result = calculate([shift], [], settings)
+        self.assertEqual([x["basis"] for x in result["allowances"]],
+                         ["10.00 Hours", "Per Week", "Per Shift"])
 
     def test_ato_weekly_payg_with_tax_free_threshold_and_help(self):
         rates = {"scale2": [

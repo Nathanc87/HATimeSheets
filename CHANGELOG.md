@@ -2,6 +2,11 @@
 
 All notable changes to HATimeSheets are documented here.
 
+## [0.1.13] - 2026-11-16
+
+### Changed
+- Overseas work now ignores the normal-hours roster and uses a 10-hour daily ordinary threshold. The first 10 hours pay at the applicable weekly rate plus the overseas loading; hours after 10 attract at least the 1.5x overtime rate plus loading. Weekly overtime tiers still apply after their configured thresholds.
+
 ## [0.1.12] - 2026-11-16
 
 ### Changed

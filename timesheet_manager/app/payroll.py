@@ -90,6 +90,8 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         earlier = sum(m for other, od, m, wk, is_travel in normalized
                       if wk == key and not is_travel and
                       (od < d or (od == d and other["id"] < s["id"])))
+        earlier_today = sum(m for other, od, m, wk, is_travel in normalized
+                            if od == d and not is_travel and other["id"] < s["id"])
         segments = []
         payable_minutes = min(mins, 600) if travelling else mins
         if travelling:
@@ -103,9 +105,17 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             for cursor in range(mins):
                 moment = start_dt + timedelta(minutes=cursor)
                 base, label = tier_at(earlier + cursor)
+                overseas = bool(s.get("is_overseas"))
                 outside = schedule is not None and not in_roster(moment)
-                multiplier = max(base, 1.5) if outside else base
-                category = ("Overseas" if s.get("is_overseas") else
+                if overseas:
+                    # Overseas ordinary time is based on a 10 paid-hour day,
+                    # not the configured local start/finish roster. Daily OT
+                    # uses at least 1.5x; weekly tiers can increase that rate.
+                    daily_overtime = earlier_today + cursor >= 600
+                    multiplier = max(base, 1.5 if daily_overtime else 1.0)
+                else:
+                    multiplier = max(base, 1.5) if outside else base
+                category = ("Overseas" if overseas else
                             "Travel" if s.get("is_travelling") else
                             "Out-of-hours" if outside and base < 1.5 else label)
                 if s.get("is_travelling") or s.get("is_overseas"):

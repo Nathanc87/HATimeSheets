@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+
+## [0.1.8] - 2026-11-16
+
+### Fixed
+- Preserved each weekday's identifier when saving the normal-hours roster, ensuring the payroll engine matches the configured day correctly.
+- Removed an unused roster break field; actual unpaid breaks continue to come from each time entry.
 ## [0.1.7] - 2026-11-16
 
 ### Added

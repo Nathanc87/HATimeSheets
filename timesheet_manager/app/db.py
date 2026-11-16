@@ -15,7 +15,7 @@ DEFAULT_SETTINGS = {
     "week_start_day": 0,
     "ordinary_hours": 38,
     "normal_hours_schedule": [
-        {"day": 0, "label": "Monday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
+        {"day": 0, "label": "Monday", "enabled": True, "start_time": "05:30", "finish_time": "16:00"},
         {"day": 1, "label": "Tuesday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
         {"day": 2, "label": "Wednesday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
         {"day": 3, "label": "Thursday", "enabled": True, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},

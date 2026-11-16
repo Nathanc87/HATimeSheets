@@ -214,13 +214,13 @@ def export_csv(start: str | None = None, end: str | None = None):
     result, settings, shifts, travel = report_data(start,end)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Record type","Date","Start","Finish","Break minutes","Paid hours","Category","Multiplier","Estimated earnings","Notes"])
+    writer.writerow(["Record type","Date","Start","Finish","Break minutes","Paid hours","Category","Multiplier","Estimated earnings","Travelling","Overseas","Notes"])
     shift_map = {s["id"]:s for s in shifts}
     for item in result["shifts"]:
         s = shift_map[item["id"]]
         for seg in item["segments"]:
-            writer.writerow(["Work",item["date"],s["start_time"],s["finish_time"],s["break_minutes"],
-                             seg["hours"],seg["category"],seg["multiplier"],"" if item["estimated_earnings"] is None else item["estimated_earnings"],item["notes"]])
+            writer.writerow(["Travel" if item["is_travelling"] else "Work",item["date"],s["start_time"],s["finish_time"],s["break_minutes"],
+                             seg["hours"],seg["category"],seg["multiplier"],"" if item["estimated_earnings"] is None else item["estimated_earnings"],item["is_travelling"],item["is_overseas"],item["notes"]])
     for item in result["travel"]:
         t = next(x for x in travel if x["id"] == item["id"])
         writer.writerow(["Travel",item["date"],t["start_time"],t["finish_time"],t["break_minutes"],
@@ -234,13 +234,13 @@ def export_xlsx(start: str | None = None, end: str | None = None):
     wb = Workbook()
     ws = wb.active
     ws.title = "Timesheet"
-    ws.append(["Type","Date","Start","Finish","Break (min)","Paid hours","Category","Multiplier","Estimated earnings","Notes"])
+    ws.append(["Type","Date","Start","Finish","Break (min)","Paid hours","Category","Multiplier","Estimated earnings","Travelling","Overseas","Notes"])
     shift_map = {s["id"]:s for s in shifts}
     for item in result["shifts"]:
         s = shift_map[item["id"]]
         for seg in item["segments"]:
-            ws.append(["Work",item["date"],s["start_time"],s["finish_time"],s["break_minutes"],seg["hours"],
-                       seg["category"],seg["multiplier"],item["estimated_earnings"],item["notes"]])
+            ws.append(["Travel" if item["is_travelling"] else "Work",item["date"],s["start_time"],s["finish_time"],s["break_minutes"],seg["hours"],
+                       seg["category"],seg["multiplier"],item["estimated_earnings"],item["is_travelling"],item["is_overseas"],item["notes"]])
     for item in result["travel"]:
         t = next(x for x in travel if x["id"] == item["id"])
         ws.append(["Travel",item["date"],t["start_time"],t["finish_time"],t["break_minutes"],item["hours"],

@@ -1,3 +1,9 @@
+## [0.1.38] - 2026-11-16
+
+### Changed
+- Calculate hourly allowances only on actual worked hours and separate travel hours; exclude public holiday, annual leave and sick leave entries.
+- Apply the same eligible-hour rule to weekly PAYG gross allocation for hourly allowances.
+
 ## [0.1.37] - 2026-11-16
 
 ### Fixed

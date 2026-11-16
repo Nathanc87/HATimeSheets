@@ -295,7 +295,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         withholding = calculate_weekly_payg(
             item["gross"], year_settings,
             bool(settings.get("payg_tax_free_threshold", True)),
-            bool(settings.get("payg_help_enabled", False)),
+            False,
             float(settings.get("payg_extra_withholding", 0) or 0)
         ) if earnings_known and year_settings else None
         payg_weeks.append({"week_start": key, "week_end": week_end.isoformat(),

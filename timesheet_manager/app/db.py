@@ -121,6 +121,8 @@ def init_db():
             db.execute("ALTER TABLE shifts ADD COLUMN is_overseas INTEGER NOT NULL DEFAULT 0")
         if "leave_type" not in columns:
             db.execute("ALTER TABLE shifts ADD COLUMN leave_type TEXT NOT NULL DEFAULT 'work'")
+        if "project" not in columns:
+            db.execute("ALTER TABLE shifts ADD COLUMN project TEXT NOT NULL DEFAULT ''")
 
         row = db.execute("SELECT id FROM settings WHERE id=1").fetchone()
         if not row:

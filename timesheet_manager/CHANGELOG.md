@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+## [0.1.7] - 2026-11-16
+
+### Added
+- Added the daily roster editor to Payroll Settings, including enabled days, start/finish times and unpaid break settings.
+- Added the additive travel/overseas loading control to Payroll Settings.
+
+### Fixed
+- Updated legacy default overtime bands to the new four-band defaults while preserving custom existing tiers.
+- Updated the overseas-loading payroll test to reflect the new +0.3x rule.
+
 \n## [0.1.6] - 2026-11-16
 
 ### Added

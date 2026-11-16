@@ -32,8 +32,7 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(categories["OT2"], 6)
 
     def test_weekly_bands_include_ordinary_and_overtime_15(self):
-        settings = {"base_rate": 40, "week_start_day": 0, "normal_hours_schedule": [],
-                    "overtime_tiers": [
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [
                         {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
                         {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x"},
                         {"after_hours": 40, "multiplier": 1.5, "label": "Overtime 1.5x"},
@@ -117,7 +116,7 @@ class PayrollTests(unittest.TestCase):
                  "finish_time": "16:00", "break_minutes": 30, "is_overseas": True, "notes": ""}
         result = calculate([shift], [], settings)
         self.assertEqual(result["total_work_hours"], 10)
-        self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
+        self.assertEqual(result["shifts"][0]["estimated_earnings"], 520)
 
     def test_configured_allowances_are_included_in_gross(self):
         settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],

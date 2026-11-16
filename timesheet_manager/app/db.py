@@ -117,6 +117,9 @@ def get_settings(db):
     stored = json.loads(row["payload"])
     merged = DEFAULT_SETTINGS.copy()
     merged.update(stored)
+    legacy_tiers = [{"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"}, {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}]
+    if stored.get("overtime_tiers") == legacy_tiers:
+        merged["overtime_tiers"] = DEFAULT_SETTINGS["overtime_tiers"]
     return merged
 
 def save_settings(db, settings):

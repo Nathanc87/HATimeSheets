@@ -8,6 +8,12 @@ DB_PATH = os.environ.get("TIMESHEETS_DB", "/data/timesheets.db")
 
 DEFAULT_SETTINGS = {
     "base_rate": None,
+    "presence_entity": "",
+    "work_zone_entities": [],
+    "presence_grace_minutes": 30,
+    "presence_start_time": "05:30",
+    "presence_rounding_minutes": 15,
+    "presence_session": None,
     "currency": "AUD",
     "pay_cycle_type": "fortnightly",
     "pay_cycle_start_date": "",

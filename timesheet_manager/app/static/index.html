@@ -52,6 +52,7 @@
 </section>
 <section id="reports" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Timesheet report</h2><p>Daily attendance record for the selected pay period</p></div></div>
+  <div class="report-week-nav"><button class="small-btn" type="button" onclick="shiftReportWeek(-1)">← Previous week</button><strong id="report-week-label">Week —</strong><button class="small-btn" type="button" onclick="shiftReportWeek(1)">Next week →</button></div>
   <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label><button class="secondary report-apply" onclick="loadReport()">Apply dates</button></div>
   <div class="table-wrap timesheet-wrap" id="report-timesheet"></div>
   <div class="allowance-report"><h3>Allowances</h3><div class="table-wrap" id="report-allowances"></div></div>

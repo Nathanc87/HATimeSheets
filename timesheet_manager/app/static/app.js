@@ -1,5 +1,7 @@
 const $ = s => document.querySelector(s);
 let settings = {};
+let paygYears = {};
+let selectedPaygYear = "";
 const names = {dashboard:"Dashboard",shifts:"Time entries",entry:"New time entry",reports:"Timesheet report",settings:"Settings"};
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600)}
 async function api(url,options={}){const r=await fetch(url,{headers:{"Content-Type":"application/json"},...options});if(!r.ok){const t=await r.text();let message=t||r.statusText;try{const body=JSON.parse(t);message=body.detail||body.message||message}catch{}throw new Error(message)}return r.status===204?null:r.json()}
@@ -37,13 +39,91 @@ const earningsRows=amountRows([["Total allowances",report.total_allowances||0],[
 const taxRows=amountRows([["PAYG withholding",report.estimated_payg],["Additional withholding",report.payg_extra_withholding],["Total withheld",report.total_withheld,"summary-emphasis"],["Estimated take-home pay",report.estimated_net,"summary-net"]]);
 $("#report-totals").innerHTML='<h3>Period totals</h3>'+summaryTable("Paid hours ("+hours(total)+")",["Payroll code","Hours"],rateSummary)+summaryTable("Allowances & earnings",["Description","Amount"],earningsRows)+summaryTable("Tax & take-home",["Description","Amount"],taxRows);}catch(e){toast("Could not load timesheet: "+e.message)}}
 function downloadExport(type){const a=document.createElement("a");const start=$("#report-start").value,end=$("#report-end").value;const q=start&&end?"?start="+start+"&end="+end:"";a.href="api/export."+type+q;a.download="timesheet."+type;a.click()}
+function clonePaygYears(value){return JSON.parse(JSON.stringify(value||{}))}
+function renderPaygEditor(years,preferred){
+ paygYears=clonePaygYears(years);
+ const select=$("#payg-financial-year");
+ const keys=Object.keys(paygYears).sort();
+ if(!keys.length){paygYears["2026-27"]={scale1:[],scale2:[]};keys.push("2026-27")}
+ selectedPaygYear=keys.includes(preferred)?preferred:(keys.includes("2026-27")?"2026-27":keys[keys.length-1]);
+ select.innerHTML=keys.map(y=>'<option value="'+esc(y)+'">'+esc(y)+'</option>').join("");
+ select.value=selectedPaygYear;
+ renderPaygBrackets();
+}
+function snapshotPaygYear(){
+ if(!selectedPaygYear)return;
+ const entry=paygYears[selectedPaygYear]||{};
+ for(const scale of ["scale1","scale2"]){
+  const rows=[...document.querySelectorAll("#payg-"+scale+" .payg-bracket-row")];
+  entry[scale]=rows.map((row,index)=>{
+   const upper=row.querySelector('[data-key="upper"]').value.trim();
+   return {upper:index===rows.length-1?null:(upper===""?null:Number(upper)),
+           a:Number(row.querySelector('[data-key="a"]').value||0),
+           b:Number(row.querySelector('[data-key="b"]').value||0)};
+  });
+ }
+ paygYears[selectedPaygYear]=entry;
+}
+function renderPaygBrackets(){
+ const entry=paygYears[selectedPaygYear]||{scale1:[],scale2:[]};
+ for(const scale of ["scale1","scale2"]){
+  const rows=entry[scale]||[];
+  $("#payg-"+scale).innerHTML=rows.length?'<div class="payg-bracket-head"><span>Weekly earnings up to ($)</span><span>Coefficient A</span><span>Coefficient B ($)</span><span></span></div>'+rows.map((r,i)=>'<div class="payg-bracket-row"><input aria-label="Weekly earnings upper limit" data-key="upper" type="number" min="0" step="0.01" placeholder="'+(i===rows.length-1?'No limit':'Upper limit')+'" value="'+(r.upper==null?'':esc(r.upper))+'" '+(i===rows.length-1?'disabled':'')+'><input aria-label="Coefficient A" data-key="a" type="number" min="0" step="0.0001" value="'+esc(r.a??0)+'"><input aria-label="Coefficient B" data-key="b" type="number" min="0" step="0.0001" value="'+esc(r.b??0)+'"><button type="button" class="danger" onclick="removePaygBracket(\''+scale+'\','+i+')" aria-label="Remove bracket">Remove</button></div>').join(""):'<div class="empty">No brackets configured for this scale.</div>';
+ }
+}
+$("#payg-financial-year").addEventListener("change",e=>{snapshotPaygYear();selectedPaygYear=e.target.value;renderPaygBrackets()});
+function addPaygBracket(scale){
+ snapshotPaygYear();
+ const rows=paygYears[selectedPaygYear][scale]||[];
+ if(rows.length)rows[rows.length-1].upper=0;
+ rows.push({upper:null,a:0,b:0});
+ paygYears[selectedPaygYear][scale]=rows;
+ renderPaygBrackets();
+}
+function removePaygBracket(scale,index){
+ snapshotPaygYear();
+ const rows=paygYears[selectedPaygYear][scale]||[];
+ rows.splice(index,1);
+ paygYears[selectedPaygYear][scale]=rows;
+ renderPaygBrackets();
+}
+function addPaygYear(){
+ const input=$("#payg-new-year"),year=input.value.trim();
+ if(!/^\\d{4}-\\d{2}$/.test(year)){toast("Enter a financial year like 2027-28");return}
+ snapshotPaygYear();
+ if(paygYears[year]){toast("That financial year already exists");$("#payg-financial-year").value=year;selectedPaygYear=year;renderPaygBrackets();return}
+ const source=paygYears[selectedPaygYear]||{scale1:[],scale2:[]};
+ paygYears[year]=clonePaygYears({[year]:source})[year];
+ selectedPaygYear=year;
+ const select=$("#payg-financial-year");
+ select.add(new Option(year,year));select.value=year;input.value="";
+ renderPaygBrackets();
+ toast("Year added — verify its brackets against the ATO");
+}
+function collectPaygYears(){
+ snapshotPaygYear();
+ for(const [year,entry] of Object.entries(paygYears)){
+  for(const scale of ["scale1","scale2"]){
+   const rows=entry[scale]||[];
+   if(!rows.length)throw new Error(year+" "+scale+" needs at least one bracket");
+   for(let i=0;i<rows.length-1;i++){
+    if(rows[i].upper==null||!Number.isFinite(Number(rows[i].upper))||Number(rows[i].upper)<=0)throw new Error(year+" "+scale+": enter an upper limit for every bracket except the last");
+   }
+   for(const row of rows){
+    if(!Number.isFinite(Number(row.a))||!Number.isFinite(Number(row.b)))throw new Error(year+" "+scale+": coefficients must be valid numbers");
+   }
+   rows[rows.length-1].upper=null;
+  }
+ }
+ return paygYears;
+}
 function renderRules(kind,items){const target=$("#"+kind+"-rules");target.innerHTML=(items||[]).map((r,i)=>ruleRow(kind,r,i)).join("")||'<div class="empty">No rules configured.</div>'}
 function ruleRow(kind,r,i){const input=(label,key,val,type="text")=>'<label>'+label+'<input data-key="'+key+'" type="'+type+'"'+(type==="number"?' step="0.01"':'')+' value="'+esc(val??"")+'"></label>';const select=(label,key,val,opts)=>'<label>'+label+'<select data-key="'+key+'">'+opts.map(o=>'<option value="'+o[0]+'" '+(String(val)===String(o[0])?"selected":"")+'>'+o[1]+'</option>').join("")+'</select></label>';let fields="";if(kind==="schedule")fields=input("Day","label",r.label)+'<label class="check">Enabled<input data-key="enabled" type="checkbox" '+(r.enabled?"checked":"")+'></label>'+input("Start","start_time",r.start_time,"time")+input("Finish","finish_time",r.finish_time,"time");if(kind==="overtime"||kind==="travel")fields=input("Rule name","label",r.label)+input("After hours","after_hours",r.after_hours,"number")+input("Multiplier","multiplier",r.multiplier,"number");if(kind==="penalty")fields=input("Name","name",r.name)+select("Condition","condition",r.condition,[["day_of_week","Day of week"],["public_holiday","Public holiday"]])+select("Scope","scope",r.scope,[["work","Work"],["travel","Travel"],["both","Both"]])+input("Multiplier","multiplier",r.multiplier,"number")+select("Day","day",r.day??6,[[0,"Monday"],[1,"Tuesday"],[2,"Wednesday"],[3,"Thursday"],[4,"Friday"],[5,"Saturday"],[6,"Sunday"]])+select("Mode","mode",r.mode,[["replace","Replace rate"],["add","Additional"]]);if(kind==="allowance")fields=input("Name","name",r.name)+input("Amount ($)","amount",r.amount,"number")+select("Frequency","frequency",r.frequency,[["hourly","Per work hour"],["weekly","Fixed per week"],["fixed","Per work shift"]]);return '<div class="rule-row" data-kind="'+kind+'" data-index="'+i+'">'+fields+(kind==="schedule"?"":'<button type="button" onclick="removeRule(\''+kind+'\','+i+')">Remove</button>')+'</div>'}
 function collectRules(kind){return [...document.querySelectorAll('#'+kind+'-rules .rule-row')].map(row=>{const o={};row.querySelectorAll("[data-key]").forEach(el=>{o[el.dataset.key]=el.type==="number"?Number(el.value):el.type==="checkbox"?el.checked:el.value});if(kind==="schedule"){o.day=Number(row.dataset.index)}if(kind==="penalty"){o.enabled=true;o.day=Number(o.day??6)}return o})}
 function addRule(kind){const defaults={overtime:{label:"New overtime",after_hours:0,multiplier:1.5},travel:{label:"New travel tier",after_hours:0,multiplier:1.3},penalty:{name:"New penalty",condition:"day_of_week",scope:"work",multiplier:2,mode:"replace",enabled:true,day:6},allowance:{name:"New allowance",amount:0,frequency:"weekly"}};const id=kind==="overtime"?"overtime":kind==="travel"?"travel":kind==="penalty"?"penalty":"allowance";const current=collectRules(id);current.push(defaults[id]);renderRules(id,current)}
 function removeRule(kind,index){const current=collectRules(kind);current.splice(index,1);renderRules(kind,current)}
-async function loadSettings(){settings=await api("api/settings");const presenceLoaded=await loadPresenceEntities();const f=$("#settings-form");for(const [k,v] of Object.entries(settings)){if(f.elements[k])f.elements[k].value=v??""}if(f.elements.travel_loading)f.elements.travel_loading.value=settings.travel_loading??0.3;if(f.elements.payg_years_json)f.elements.payg_years_json.value=JSON.stringify(settings.payg_years||{},null,2);renderRules("overtime",settings.overtime_tiers);renderRules("schedule",settings.normal_hours_schedule||[]);renderRules("penalty",settings.penalty_rules);renderRules("allowance",settings.allowances);loadHolidays();if(presenceLoaded)$("#presence-status").textContent=settings.presence_entity&&(settings.work_zone_entities||[]).length?"Presence monitoring configured":"Choose a tracker and at least one work zone"}
-$("#settings-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const d=formObject(f);d.presence_entity=d.presence_entity||"";d.work_zone_entities=[...$("#work-zone-entities").selectedOptions].map(o=>o.value);d.presence_grace_minutes=Number(d.presence_grace_minutes||30);d.presence_rounding_minutes=Number(d.presence_rounding_minutes||15);d.presence_start_time=d.presence_start_time||"05:30";d.base_rate=d.base_rate===""?null:Number(d.base_rate);d.custom_cycle_days=Number(d.custom_cycle_days);d.week_start_day=Number(d.week_start_day);d.ordinary_hours=Number(d.ordinary_hours);d.public_holiday_credit_hours=Number(d.public_holiday_credit_hours||0);d.public_holiday_credit_counts_toward_overtime=d.public_holiday_credit_counts_toward_overtime===""?null:d.public_holiday_credit_counts_toward_overtime==="true";d.travel_loading=Number(d.travel_loading??0.3);d.payg_tax_free_threshold=d.payg_tax_free_threshold!=="false";d.payg_extra_withholding=Number(d.payg_extra_withholding||0);try{d.payg_years=JSON.parse(d.payg_years_json||"{}");delete d.payg_years_json}catch(err){toast("PAYG financial-year JSON is invalid");return}d.normal_hours_schedule=collectRules("schedule");d.overtime_tiers=collectRules("overtime");d.penalty_rules=collectRules("penalty");d.allowances=collectRules("allowance");try{settings=await api("api/settings",{method:"PUT",body:JSON.stringify(d)});$("#settings-status").textContent="Saved";toast("Settings saved")}catch(err){toast("Settings failed: "+err.message)}});
+async function loadSettings(){settings=await api("api/settings");const presenceLoaded=await loadPresenceEntities();const f=$("#settings-form");for(const [k,v] of Object.entries(settings)){if(f.elements[k])f.elements[k].value=v??""}if(f.elements.travel_loading)f.elements.travel_loading.value=settings.travel_loading??0.3;renderPaygEditor(settings.payg_years||{});renderRules("overtime",settings.overtime_tiers);renderRules("schedule",settings.normal_hours_schedule||[]);renderRules("penalty",settings.penalty_rules);renderRules("allowance",settings.allowances);loadHolidays();if(presenceLoaded)$("#presence-status").textContent=settings.presence_entity&&(settings.work_zone_entities||[]).length?"Presence monitoring configured":"Choose a tracker and at least one work zone"}
+$("#settings-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;const d=formObject(f);d.presence_entity=d.presence_entity||"";d.work_zone_entities=[...$("#work-zone-entities").selectedOptions].map(o=>o.value);d.presence_grace_minutes=Number(d.presence_grace_minutes||30);d.presence_rounding_minutes=Number(d.presence_rounding_minutes||15);d.presence_start_time=d.presence_start_time||"05:30";d.base_rate=d.base_rate===""?null:Number(d.base_rate);d.custom_cycle_days=Number(d.custom_cycle_days);d.week_start_day=Number(d.week_start_day);d.ordinary_hours=Number(d.ordinary_hours);d.public_holiday_credit_hours=Number(d.public_holiday_credit_hours||0);d.public_holiday_credit_counts_toward_overtime=d.public_holiday_credit_counts_toward_overtime===""?null:d.public_holiday_credit_counts_toward_overtime==="true";d.travel_loading=Number(d.travel_loading??0.3);d.payg_tax_free_threshold=d.payg_tax_free_threshold!=="false";d.payg_extra_withholding=Number(d.payg_extra_withholding||0);try{d.payg_years=collectPaygYears()}catch(err){toast(err.message);return}d.normal_hours_schedule=collectRules("schedule");d.overtime_tiers=collectRules("overtime");d.penalty_rules=collectRules("penalty");d.allowances=collectRules("allowance");try{settings=await api("api/settings",{method:"PUT",body:JSON.stringify(d)});$("#settings-status").textContent="Saved";toast("Settings saved")}catch(err){toast("Settings failed: "+err.message)}});
 $("#holiday-form").addEventListener("submit",async e=>{e.preventDefault();await api("api/holidays",{method:"POST",body:JSON.stringify(formObject(e.currentTarget))});e.currentTarget.reset();setDefaultDates();loadHolidays();toast("Holiday saved")});
 async function loadHolidays(){const rows=await api("api/holidays");$("#holiday-list").innerHTML=rows.map(h=>recordHtml(h.holiday_date,h.name,"Public holiday",'<button class="danger" onclick="deleteHoliday('+h.id+')">×</button>')).join("")||'<div class="empty">No public holidays added.</div>'}
 async function deleteHoliday(id){await api("api/holidays/"+id,{method:"DELETE"});loadHolidays()}

@@ -1,3 +1,8 @@
+## [0.1.32] - 2026-11-16
+
+### Added
+- Add a monthly hours calendar above the Time entries table, showing daily paid hours and highlighting past scheduled workdays with no recorded hours.
+
 ## [0.1.31] - 2026-11-16
 
 ### Fixed

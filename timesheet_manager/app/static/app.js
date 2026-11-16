@@ -25,7 +25,45 @@ function timeMins(f,s){let [fh,fm]=f.split(":").map(Number),[sh,sm]=s.split(":")
 function recordHtml(title,sub,note,right){return '<div class="record"><div><b>'+esc(title)+' · '+esc(sub)+'</b><small>'+esc(note)+'</small></div><div class="right"><b>'+right+'</b></div></div>'}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 $("#entry-form").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget,d=formObject(f),id=d.entry_id;delete d.entry_id;d.break_minutes=Number(d.break_minutes||0);for(const k of ["is_public_holiday","is_travelling","is_overseas"])d[k]=f.elements[k].checked;try{await api(id?"api/shifts/"+id:"api/shifts",{method:id?"PUT":"POST",body:JSON.stringify(d)});toast(id?"Time entry updated":"Time entry saved");f.reset();showPage("shifts")}catch(err){toast("Save failed: "+err.message)}});
-async function loadShifts(){const rows=await api("api/shifts");shiftCache=rows;$("#shift-list").innerHTML=rows.length?'<table><thead><tr><th>Date</th><th>Time in</th><th>Time out</th><th>Break</th><th>Total hours</th><th>Entry type</th><th>Overseas</th><th>Actions</th></tr></thead><tbody>'+rows.map(s=>{const paid=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));const payable=s.is_travelling?Math.min(paid,600):paid;return '<tr><td>'+esc(s.work_date)+'</td><td>'+esc(s.start_time)+'</td><td>'+esc(s.finish_time)+'</td><td>'+Number(s.break_minutes||0)+' min</td><td>'+hours(payable/60)+'</td><td>'+(s.is_travelling?'<span class="tag">Travel</span>':s.is_overseas?'<span class="tag">Work – Overseas</span>':s.is_public_holiday?'<span class="tag">Public holiday</span>':'Work')+'</td><td>'+(s.is_overseas?'Yes':'—')+'</td><td><button class="small-btn" onclick="editShift('+s.id+')">Edit</button> <button class="danger" onclick="deleteShift('+s.id+')">Delete</button></td></tr>'}).join("")+'</tbody></table>':'<div class="empty">No time entries yet.</div>'}
+let shiftCalendarMonthDate=null;
+async function loadShifts(){
+ const [rows,calendarSettings,holidays]=await Promise.all([api("api/shifts"),api("api/settings"),api("api/holidays")]);
+ shiftCache=rows;settings=calendarSettings;
+ if(!shiftCalendarMonthDate){const now=new Date();shiftCalendarMonthDate=new Date(now.getFullYear(),now.getMonth(),1,12)}
+ renderShiftCalendar(rows,calendarSettings,holidays||[]);
+ $("#shift-list").innerHTML=rows.length?'<table><thead><tr><th>Date</th><th>Time in</th><th>Time out</th><th>Break</th><th>Total hours</th><th>Entry type</th><th>Overseas</th><th>Actions</th></tr></thead><tbody>'+rows.map(s=>{const paid=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));const payable=s.is_travelling?Math.min(paid,600):paid;return '<tr><td>'+esc(s.work_date)+'</td><td>'+esc(s.start_time)+'</td><td>'+esc(s.finish_time)+'</td><td>'+Number(s.break_minutes||0)+' min</td><td>'+hours(payable/60)+'</td><td>'+(s.is_travelling?'<span class="tag">Travel</span>':s.is_overseas?'<span class="tag">Work – Overseas</span>':s.is_public_holiday?'<span class="tag">Public holiday</span>':'Work')+'</td><td>'+(s.is_overseas?'Yes':'—')+'</td><td><button class="small-btn" onclick="editShift('+s.id+')">Edit</button> <button class="danger" onclick="deleteShift('+s.id+')">Delete</button></td></tr>'}).join("")+'</tbody></table>':'<div class="empty">No time entries yet.</div>'}
+function shiftCalendarMonth(amount){
+ if(!shiftCalendarMonthDate)return;
+ shiftCalendarMonthDate=new Date(shiftCalendarMonthDate.getFullYear(),shiftCalendarMonthDate.getMonth()+amount,1,12);
+ renderShiftCalendar(shiftCache,settings,window.shiftCalendarHolidays||[]);
+}
+function renderShiftCalendar(rows,config,holidays){
+ window.shiftCalendarHolidays=holidays||[];
+ const root=$("#shift-calendar");if(!root)return;
+ const y=shiftCalendarMonthDate.getFullYear(),m=shiftCalendarMonthDate.getMonth();
+ $("#shift-calendar-label").textContent=shiftCalendarMonthDate.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+ const first=new Date(y,m,1,12),offset=(first.getDay()+6)%7;
+ const days=new Date(y,m+1,0).getDate(),today=new Date();today.setHours(12,0,0,0);
+ const totals={};(rows||[]).forEach(s=>{
+  const mins=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));
+  const paid=s.is_travelling?Math.min(mins,600):mins;
+  totals[s.work_date]=(totals[s.work_date]||0)+paid/60;
+ });
+ const schedule=config.normal_hours_schedule||[];
+ const enabledDays=new Set(schedule.filter(x=>x.enabled).map(x=>Number(x.day)));
+ const holidayDates=new Set((holidays||[]).map(h=>h.holiday_date));
+ const headers=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+ let out=headers.map(x=>'<div class="calendar-weekday">'+x+'</div>').join("");
+ for(let i=0;i<offset;i++)out+='<div class="calendar-day calendar-empty"></div>';
+ for(let day=1;day<=days;day++){
+  const d=new Date(y,m,day,12),key=dateText(d),dow=(d.getDay()+6)%7;
+  const total=totals[key]||0,has=total>0,scheduled=enabledDays.has(dow)&&!holidayDates.has(key),missed=d<today&&scheduled&&!has;
+  const classes=["calendar-day",has?"calendar-has-hours":"",missed?"calendar-missing":"",key===dateText(today)?"calendar-today":""].filter(Boolean).join(" ");
+  out+='<div class="'+classes+'" title="'+(missed?"Scheduled workday with no time entry":has?"Hours recorded":"No hours recorded")+'"><span class="calendar-date">'+day+'</span><strong>'+(has?hours(total):"—")+'</strong></div>';
+ }
+ const cells=offset+days;for(let i=cells;i<Math.ceil(cells/7)*7;i++)out+='<div class="calendar-day calendar-empty"></div>';
+ root.innerHTML=out;
+}
 let shiftCache=[];
 function newEntry(){const f=$("#entry-form");f.reset();f.elements.entry_id.value="";f.elements.start_time.value="05:30";f.elements.finish_time.value="16:00";f.elements.break_minutes.value=30;f.elements.is_public_holiday.checked=false;f.elements.is_travelling.checked=false;f.elements.is_overseas.checked=false;$("#entry-heading").textContent="New time entry";$("#entry-save").textContent="Save time entry";setDefaultDates();showPage("entry")}
 function editShift(id){const s=shiftCache.find(x=>Number(x.id)===Number(id));if(!s)return;const f=$("#entry-form");f.elements.entry_id.value=s.id;f.elements.work_date.value=s.work_date;f.elements.start_time.value=s.start_time;f.elements.finish_time.value=s.finish_time;f.elements.break_minutes.value=s.break_minutes;f.elements.notes.value=s.notes||"";f.elements.is_public_holiday.checked=!!s.is_public_holiday;f.elements.is_travelling.checked=!!s.is_travelling;f.elements.is_overseas.checked=!!s.is_overseas;$("#entry-heading").textContent="Edit time entry";$("#entry-save").textContent="Save changes";showPage("entry")}

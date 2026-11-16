@@ -1,3 +1,9 @@
+## [0.1.25] - 2026-11-16
+
+### Fixed
+- Preserved Home Assistant entity-discovery errors in the Automatic attendance settings instead of overwriting them with the setup prompt.
+- Displayed the API error detail returned by the backend so connection and permission failures can be diagnosed.
+
 ## [0.1.24] - 2026-11-16
 
 ### Fixed

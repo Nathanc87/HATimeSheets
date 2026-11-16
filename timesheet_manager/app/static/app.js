@@ -16,6 +16,7 @@ let dashboardWeekStartDay=null;
 function dateText(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function parseLocalDate(value){const [y,m,d]=value.split("-").map(Number);return new Date(y,m-1,d,12)}
 function displayDate(d){return d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"})}
+function displayLongDate(d){return d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
 let reportWeekStart=null,reportWeekStartDay=null;
 async function initialiseReportWeek(){settings=await api("api/settings");const day=Number(settings.week_start_day??0);if(!reportWeekStart||reportWeekStartDay!==day){const now=new Date();reportWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);reportWeekStart.setDate(reportWeekStart.getDate()-((reportWeekStart.getDay()+6-day)%7));reportWeekStartDay=day}const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end)}
 function shiftReportWeek(amount){if(!reportWeekStart)return;reportWeekStart.setDate(reportWeekStart.getDate()+amount*7);const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport()}
@@ -61,7 +62,7 @@ let entrySubmitting=false;
 let entryBaseline="";
 function entrySnapshot(){const f=$("#entry-form");return JSON.stringify({data:formObject(f),checks:["is_public_holiday","is_travelling","is_overseas"].map(k=>f.elements[k].checked)})}
 function entryIsDirty(){return !!entryBaseline&&entrySnapshot()!==entryBaseline}
-function updateEntryDirtyState(){const dirty=entryIsDirty(),status=$("#entry-dirty-status");if(status)status.textContent=dirty?"Unsaved changes":"";const date=$("#entry-form").elements.work_date.value,label=$("#entry-day-label");if(label)label.textContent=date?displayDate(parseLocalDate(date)):"Choose a date to edit"}
+function updateEntryDirtyState(){const dirty=entryIsDirty(),status=$("#entry-dirty-status");if(status)status.textContent=dirty?"Unsaved changes":"";const date=$("#entry-form").elements.work_date.value,label=$("#entry-day-label");if(label)label.textContent=date?displayLongDate(parseLocalDate(date)):"Choose a date to edit"}
 $("#entry-form").addEventListener("input",updateEntryDirtyState);
 $("#entry-form").addEventListener("change",updateEntryDirtyState);
 async function saveEntry(){

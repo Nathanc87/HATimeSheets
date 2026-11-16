@@ -21,6 +21,8 @@ class ShiftIn(BaseModel):
     break_minutes: int = Field(default=30, ge=0, le=1440)
     notes: str = ""
     is_public_holiday: bool = False
+    is_travelling: bool = False
+    is_overseas: bool = False
 
 class TravelIn(BaseModel):
     shift_id: int | None = None
@@ -88,19 +90,19 @@ def shifts_post(item: ShiftIn):
     now = now_iso()
     with connect() as db:
         cur = db.execute("""INSERT INTO shifts
-          (work_date,start_time,finish_time,break_minutes,notes,is_public_holiday,created_at,updated_at)
-          VALUES(?,?,?,?,?,?,?,?)""",
+          (work_date,start_time,finish_time,break_minutes,notes,is_public_holiday,is_travelling,is_overseas,created_at,updated_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?)""",
           (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
-           int(item.is_public_holiday),now,now))
+           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),now,now))
         return {"id": cur.lastrowid}
 
 @app.put("/api/shifts/{shift_id}")
 def shifts_put(shift_id: int, item: ShiftIn):
     with connect() as db:
         cur = db.execute("""UPDATE shifts SET work_date=?,start_time=?,finish_time=?,
-          break_minutes=?,notes=?,is_public_holiday=?,updated_at=? WHERE id=?""",
+          break_minutes=?,notes=?,is_public_holiday=?,is_travelling=?,is_overseas=?,updated_at=? WHERE id=?""",
           (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
-           int(item.is_public_holiday),now_iso(),shift_id))
+           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),now_iso(),shift_id))
         if not cur.rowcount:
             raise HTTPException(404, "Shift not found")
         return {"ok": True}

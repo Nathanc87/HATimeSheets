@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.16] - 2026-11-16
+
+### Fixed
+- Corrected newline formatting in the PAYG CSV and Excel export additions so the application compiles.
+
 ## [0.1.15] - 2026-11-16
 
 ### Added

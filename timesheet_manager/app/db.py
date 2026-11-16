@@ -49,7 +49,13 @@ DEFAULT_SETTINGS = {
          "scope": "work", "multiplier": 2.0, "mode": "replace"}
     ],
     "allowances": [],
-    "payg_tax_free_threshold": True,
+    "payg_annual_years": {"2026-27": {"resident_brackets": [
+        {"lower": 0, "upper": 18200, "base_tax": 0, "rate": 0},
+        {"lower": 18200, "upper": 45000, "base_tax": 0, "rate": 0.15},
+        {"lower": 45000, "upper": 135000, "base_tax": 4020, "rate": 0.30},
+        {"lower": 135000, "upper": 190000, "base_tax": 31020, "rate": 0.37},
+        {"lower": 190000, "upper": None, "base_tax": 51370, "rate": 0.45}
+    ]}},
     "payg_extra_withholding": 0,
     "payg_years": {"2026-27":{"scale1":[{"upper":188,"a":0.15,"b":0.15},{"upper":371,"a":0.2084,"b":11.0185},{"upper":515,"a":0.179,"b":0.1066},{"upper":932,"a":0.3227,"b":74.1674},{"upper":2246,"a":0.32,"b":71.6508},{"upper":3303,"a":0.39,"b":228.8816},{"upper":None,"a":0.47,"b":493.1893}],"scale2":[{"upper":362,"a":0,"b":0},{"upper":538,"a":0.15,"b":54.3462},{"upper":673,"a":0.25,"b":108.2135},{"upper":721,"a":0.17,"b":54.3473},{"upper":865,"a":0.179,"b":60.8377},{"upper":1282,"a":0.3227,"b":185.1935},{"upper":2596,"a":0.32,"b":181.7319},{"upper":3653,"a":0.39,"b":363.4627},{"upper":None,"a":0.47,"b":655.7704}],"help_scale1":[{"upper":987,"a":0,"b":0},{"upper":2144,"a":0.15,"b":148.0615},{"upper":2727,"a":0.17,"b":190.9527},{"upper":None,"a":0.1,"b":0}],"help_scale2":[{"upper":1337,"a":0,"b":0},{"upper":2494,"a":0.15,"b":200.5615},{"upper":3577,"a":0.17,"b":250.4527},{"upper":None,"a":0.1,"b":0}]}}
 }

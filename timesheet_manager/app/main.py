@@ -26,6 +26,7 @@ class ShiftIn(BaseModel):
     is_travelling: bool = False
     is_overseas: bool = False
     leave_type: str = "work"
+    project: str = ""
 
 class TravelIn(BaseModel):
     shift_id: int | None = None
@@ -116,19 +117,19 @@ def shifts_post(item: ShiftIn):
     now = now_iso()
     with connect() as db:
         cur = db.execute("""INSERT INTO shifts
-          (work_date,start_time,finish_time,break_minutes,notes,is_public_holiday,is_travelling,is_overseas,leave_type,created_at,updated_at)
-          VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+          (work_date,start_time,finish_time,break_minutes,notes,is_public_holiday,is_travelling,is_overseas,leave_type,project,created_at,updated_at)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
           (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
-           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,now,now))
+           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,item.project,now,now))
         return {"id": cur.lastrowid}
 
 @app.put("/api/shifts/{shift_id}")
 def shifts_put(shift_id: int, item: ShiftIn):
     with connect() as db:
         cur = db.execute("""UPDATE shifts SET work_date=?,start_time=?,finish_time=?,
-          break_minutes=?,notes=?,is_public_holiday=?,is_travelling=?,is_overseas=?,leave_type=?,updated_at=? WHERE id=?""",
+          break_minutes=?,notes=?,is_public_holiday=?,is_travelling=?,is_overseas=?,leave_type=?,project=?,updated_at=? WHERE id=?""",
           (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
-           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,now_iso(),shift_id))
+           int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,item.project,now_iso(),shift_id))
         if not cur.rowcount:
             raise HTTPException(404, "Shift not found")
         return {"ok": True}
@@ -227,8 +228,20 @@ def report_data(start=None, end=None):
         return calculate(shifts, travel, settings, holidays, allowances), settings, shifts, travel
 
 @app.get("/api/report")
-def report(start: str | None = None, end: str | None = None):
+def report(start: str | None = None, end: str | None = None, project: str | None = None):
     result, settings, shifts, travel = report_data(start,end)
+    if project is not None:
+        shifts = [s for s in shifts if (s.get("project") or "") == project]
+        holidays = []
+        with connect() as db:
+            holidays = [r["holiday_date"] for r in db.execute("SELECT holiday_date FROM holidays").fetchall()]
+            allowance_sql = "SELECT * FROM allowance_entries"
+            allowance_params = []
+            if start and end:
+                allowance_sql += " WHERE entry_date BETWEEN ? AND ?"
+                allowance_params = [start,end]
+            allowance_entries = [dict(r) for r in db.execute(allowance_sql, allowance_params).fetchall()]
+        result = calculate(shifts, [], settings, holidays, allowance_entries)
     result["base_rate"] = settings.get("base_rate")
     result["currency"] = settings.get("currency","AUD")
     result["pay_cycle_type"] = settings.get("pay_cycle_type")

@@ -291,7 +291,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         week_end = item["start"] + timedelta(days=6)
         fy_start = week_end.year if week_end.month >= 7 else week_end.year - 1
         fy_label = f"{fy_start}-{str(fy_start + 1)[-2:]}"
-        year_settings = settings.get("payg_years", {}).get(fy_label)
+        year_settings = settings.get("payg_annual_years", {}).get(fy_label) or settings.get("payg_years", {}).get(fy_label)
         withholding = calculate_weekly_payg(
             item["gross"], year_settings,
             bool(settings.get("payg_tax_free_threshold", True)),

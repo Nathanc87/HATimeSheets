@@ -1,3 +1,8 @@
+## [0.1.34] - 2026-11-16
+
+### Changed
+- Rebalance timesheet report columns to give Hours by rate more width and wrap long rate labels cleanly without forcing narrow columns.
+
 ## [0.1.33] - 2026-11-16
 
 ### Changed

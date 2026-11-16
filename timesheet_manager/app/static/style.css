@@ -54,3 +54,11 @@
 .payg-bracket-row input:disabled{opacity:.65}
 .payg-bracket-row button{font-size:11px;white-space:nowrap}
 @media(max-width:700px){.payg-scales{grid-template-columns:1fr}.payg-bracket-head,.payg-bracket-row{grid-template-columns:1.2fr 1fr 1fr}.payg-bracket-head span:last-child{display:none}.payg-bracket-row button{grid-column:1/-1;justify-self:end}}
+
+.report-week-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:10px;background:var(--panel2);border-radius:8px}
+.report-week-nav strong{font-size:13px;text-align:center}
+.payg-bracket-head,.resident-bracket-row{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1fr auto;gap:7px;align-items:center}
+.payg-bracket-head{font-size:11px;color:var(--muted);padding:6px 0}
+.resident-bracket-row{margin:6px 0}
+.resident-bracket-row input{min-width:0;padding:8px}
+@media(max-width:700px){.report-week-nav{gap:5px}.report-week-nav .small-btn{padding:7px}.payg-bracket-head,.resident-bracket-row{grid-template-columns:1fr 1fr}.payg-bracket-head span{display:none}.resident-bracket-row button{grid-column:1/-1;justify-self:end}}

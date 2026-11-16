@@ -1,3 +1,9 @@
+## [0.1.44] - 2026-11-17
+
+### Changed
+- Place Time in and Time out side by side in the time-entry editor, with the unpaid break on its own row.
+- Show the selected entry date in a long weekday format (for example, Tuesday, 29 October 2026) in the day-navigation toolbar.
+
 ## [0.1.43] - 2026-11-17
 
 ### Fixed

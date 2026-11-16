@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.21] - 2026-11-16
+
+### Changed
+- Removed the detailed weekly withholding breakdown from the report summary; weekly PAYG still contributes to the period totals.
+- Simplified allowance calculation bases to concise labels such as `Per Week`, `Per Shift` and `68.00 Hours`.
+
+
 ## [0.1.20] - 2026-11-16
 
 ### Fixed

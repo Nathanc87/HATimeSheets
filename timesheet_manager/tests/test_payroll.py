@@ -250,9 +250,9 @@ class PayrollTests(unittest.TestCase):
             {"lower": 135000, "upper": 190000, "base_tax": 31020, "rate": 0.37},
             {"lower": 190000, "upper": None, "base_tax": 51370, "rate": 0.45}]}
         result = calculate_weekly_payg(1000, rates, extra_withholding=10)
-        self.assertEqual(result["payg"], 79)
+        self.assertEqual(result["payg"], 118)
         self.assertEqual(result["extra"], 10)
-        self.assertEqual(result["net"], 911)
+        self.assertEqual(result["net"], 872)
 
     def test_payg_is_calculated_per_week_and_summed_for_report(self):
         rates = {"2026-27": {

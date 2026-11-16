@@ -260,7 +260,7 @@ def export_csv(start: str | None = None, end: str | None = None):
         for seg in item.get("segments", []):
             key = "{} ({:.2f}x)".format(seg["category"], seg["multiplier"])
             rate_totals[key] = rate_totals.get(key, 0) + float(seg["hours"])
-        kind = "Travel" if item["is_travelling"] else ("Public holiday" if s.get("is_public_holiday") else "Work")
+        kind = "Travel" if item["is_travelling"] else ("Work - Overseas" if item["is_overseas"] else ("Public holiday" if s.get("is_public_holiday") else "Work"))
         writer.writerow([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
                          round(payable_minutes / 60, 2), breakdown, kind, "Yes" if item["is_overseas"] else "No", item["notes"]])
     writer.writerow([])
@@ -302,7 +302,7 @@ def export_xlsx(start: str | None = None, end: str | None = None):
         for seg in item.get("segments", []):
             key = "{} ({:.2f}x)".format(seg["category"], seg["multiplier"])
             rate_totals[key] = rate_totals.get(key, 0) + float(seg["hours"])
-        kind = "Travel" if item["is_travelling"] else ("Public holiday" if s.get("is_public_holiday") else "Work")
+        kind = "Travel" if item["is_travelling"] else ("Work - Overseas" if item["is_overseas"] else ("Public holiday" if s.get("is_public_holiday") else "Work"))
         ws.append([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
                    round(payable_minutes / 60, 2), breakdown, kind, bool(item["is_overseas"]), item["notes"]])
     allowance_sheet = wb.create_sheet("Allowances")

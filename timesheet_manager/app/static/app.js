@@ -89,7 +89,7 @@ function removePaygBracket(scale,index){
 }
 function addPaygYear(){
  const input=$("#payg-new-year"),year=input.value.trim();
- if(!/^\\d{4}-\\d{2}$/.test(year)){toast("Enter a financial year like 2027-28");return}
+ if(!/^[0-9]{4}-[0-9]{2}$/.test(year)){toast("Enter a financial year like 2027-28");return}
  snapshotPaygYear();
  if(paygYears[year]){toast("That financial year already exists");$("#payg-financial-year").value=year;selectedPaygYear=year;renderPaygBrackets();return}
  const source=paygYears[selectedPaygYear]||{scale1:[],scale2:[]};

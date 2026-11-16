@@ -1,6 +1,11 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+## [0.1.10] - 2026-11-16
+
+### Fixed
+- Corrected the weekday roster editor to retain the weekday index and expose only the roster start and finish times; actual unpaid breaks remain recorded on each shift.
+
 ## [0.1.9] - 2026-11-16
 
 ### Fixed

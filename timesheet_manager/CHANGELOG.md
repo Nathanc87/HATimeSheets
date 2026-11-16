@@ -1,3 +1,9 @@
+## [0.1.40] - 2026-11-16
+
+### Fixed
+- Complete project-filtered reporting so time entries and linked travel are recalculated only for the selected project, with generic allowances excluded from project-specific totals.
+- Move project management into Payroll Settings and show project names in report rows.
+
 ## [0.1.39] - 2026-11-16
 
 ### Added

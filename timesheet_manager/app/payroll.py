@@ -62,9 +62,13 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         d = date.fromisoformat(s["work_date"])
         mins = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
         key = weekly_bucket_start(d, week_start).isoformat()
+        leave_type = s.get("leave_type", "work") or "work"
+        is_leave = leave_type in ("annual_leave", "sick_leave")
+        if is_leave:
+            mins = 600
         travelling = bool(s.get("is_travelling", False))
         normalized.append((s, d, mins, key, travelling))
-        if not travelling:
+        if not travelling and not is_leave:
             by_week[key] = by_week.get(key, 0) + mins
 
     def tier_at(absolute_minutes):
@@ -87,14 +91,18 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         return begin <= clock < finish if finish > begin else (clock >= begin or clock < finish)
 
     for s, d, mins, key, travelling in normalized:
+        is_leave = (s.get("leave_type", "work") or "work") in ("annual_leave", "sick_leave")
         earlier = sum(m for other, od, m, wk, is_travel in normalized
-                      if wk == key and not is_travel and
+                      if wk == key and not is_travel and (other.get("leave_type", "work") or "work") == "work" and
                       (od < d or (od == d and other["id"] < s["id"])))
         earlier_today = sum(m for other, od, m, wk, is_travel in normalized
-                            if od == d and not is_travel and other["id"] < s["id"])
+                            if od == d and not is_travel and (other.get("leave_type", "work") or "work") == "work" and other["id"] < s["id"])
         segments = []
         payable_minutes = min(mins, 600) if travelling else mins
-        if travelling:
+        if is_leave:
+            leave_label = "Annual Leave" if s.get("leave_type") == "annual_leave" else "Sick Leave"
+            segments = [{"category": leave_label, "pay_code": leave_label, "hours": 10.0, "multiplier": 1.0}]
+        elif travelling:
             base, tier_label = tier_at(earlier)
             if payable_minutes:
                 travel_kind = "OT" if "overtime" in str(tier_label).lower() or str(tier_label).lower().startswith("ot") else "Ordinary"
@@ -170,7 +178,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         earnings = None if rate in (None, "") else round(sum(x["hours"] * float(rate) * x["multiplier"] for x in segments), 2)
         result.append({"id": s["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
                        "payable_hours": round(payable_minutes / 60, 4),
-                       "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)),
+                       "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)), "leave_type": s.get("leave_type", "work"),
                        "weekly_hours_including_shift": round((earlier + (0 if travelling else mins)) / 60, 4),
                        "segments": segments, "estimated_earnings": earnings,
                        "notes": s.get("notes", "")})

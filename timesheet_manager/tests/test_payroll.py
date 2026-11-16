@@ -288,5 +288,13 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(segment["multiplier"], 1.3)
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 52)
 
+    def test_2026_27_weekly_scale2_matches_ato_withholding_including_medicare(self):
+        from app.db import DEFAULT_SETTINGS
+        rates = DEFAULT_SETTINGS["payg_years"]["2026-27"]
+        result = calculate_weekly_payg(6222.64, rates, claim_tax_free_threshold=True)
+        self.assertEqual(result["payg"], 2269)
+        self.assertEqual(result["total_withheld"], 2269)
+        self.assertEqual(result["net"], 3953.64)
+
 if __name__ == "__main__":
     unittest.main()

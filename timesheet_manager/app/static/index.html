@@ -10,7 +10,6 @@
   <nav>
     <button class="nav active" data-page="dashboard">▦ <span>Dashboard</span></button>
     <button class="nav" data-page="shifts">◷ <span>Time entries</span></button>
-    <button class="nav" data-page="travel">↗ <span>Travel</span></button>
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
@@ -21,7 +20,7 @@
 <section id="dashboard" class="page active">
   <div class="cards">
     <article class="stat"><span>Hours this week</span><strong id="week-hours">—</strong><small>Paid work hours</small></article>
-    <article class="stat"><span>Travel hours</span><strong id="travel-hours">—</strong><small>Recorded travel</small></article>
+    <article class="stat"><span>Travel hours (capped)</span><strong id="travel-hours">—</strong><small>Recorded travel</small></article>
     <article class="stat"><span>Estimated gross</span><strong id="gross">Not configured</strong><small id="gross-note">Set your hourly rate in Settings</small></article>
   </div>
   <div class="grid-two">
@@ -32,33 +31,21 @@
       <label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="30"></label>
       <label>Notes<textarea name="notes" rows="3" placeholder="Work completed, job details, issues..."></textarea></label>
       <label class="check"><input name="is_public_holiday" type="checkbox"> Public holiday</label>
-      <button class="primary">Save shift</button>
+      <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">Paid at 1.3×, maximum 10 hours; no overtime or penalty rates</small></label>
+      <label class="check"><input name="is_overseas" type="checkbox"> Overseas</label>
+      <button class="primary">Save time entry</button>
     </form></article>
   </div>
 </section>
 <section id="shifts" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Time entries</h2><p>Record and review your shifts</p></div><button class="small-btn" onclick="showPage('dashboard')">+ New shift</button></div><div id="shift-list" class="table-wrap"></div></article>
 </section>
-<section id="travel" class="page">
-  <div class="grid-two">
-    <article class="panel"><div class="panel-head"><div><h2>Add travel</h2><p>Record travel time separately from work time</p></div></div>
-    <form id="travel-form" class="form">
-      <label>Date<input name="travel_date" type="date" required></label>
-      <div class="form-row"><label>Start<input name="start_time" type="time" required></label><label>Finish<input name="finish_time" type="time" required></label></div>
-      <label>Unpaid break (minutes)<input name="break_minutes" type="number" min="0" value="0"></label>
-      <label>Link to shift (optional)<select name="shift_id" id="travel-shift"><option value="">No linked shift</option></select></label>
-      <label>Travel notes<textarea name="notes" rows="3" placeholder="From/to, purpose, job..."></textarea></label>
-      <button class="primary">Save travel</button>
-    </form></article>
-    <article class="panel"><div class="panel-head"><div><h2>Travel records</h2><p>Recorded travel entries</p></div></div><div id="travel-list" class="record-list"></div></article>
-  </div>
-</section>
 <section id="reports" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Reports & export</h2><p>Download your recorded timesheets</p></div></div>
   <div class="form-row filters"><label>From<input type="date" id="report-start"></label><label>To<input type="date" id="report-end"></label></div>
   <div class="report-cards" id="report-summary"></div>
   <div class="actions"><button class="primary" onclick="downloadExport('xlsx')">Export Excel (.xlsx)</button><button class="secondary" onclick="downloadExport('csv')">Export CSV</button></div>
-  <p class="hint">Exports contain shift times, breaks, notes, calculated categories and travel records.</p></article>
+  <p class="hint">Exports contain time entries, travel/overseas flags, breaks, notes and calculated pay categories.</p></article>
 </section>
 <section id="settings" class="page">
   <article class="panel"><div class="panel-head"><div><h2>Payroll settings</h2><p>Configure your pay cycle and calculation rules. No hourly rate is assumed.</p></div></div>

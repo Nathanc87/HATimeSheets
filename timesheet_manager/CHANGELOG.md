@@ -1,3 +1,10 @@
+## [0.1.29] - 2026-11-16
+
+### Changed
+- Show overseas work entries as Work – Overseas in the time-entry list, reports and CSV / Excel exports.
+- Add previous-week / next-week navigation to Reports & export, aligned with the configured overtime week.
+- Replace weekly PAYG coefficient editing with annual Australian resident tax brackets by financial year. Weekly gross is annualised at 52 weeks, annual tax is calculated and divided by 52; Medicare levy is excluded.
+
 ## [0.1.28] - 2026-11-16
 
 ### Changed

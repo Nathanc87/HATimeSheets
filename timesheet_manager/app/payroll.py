@@ -217,15 +217,15 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             continue
         if frequency == "hourly":
             value = allowance_hours * amount
-            basis = f"{allowance_hours:.2f} work and travel hours"
+            basis = f"{allowance_hours:.2f} Hours"
         elif frequency == "fixed":
             count = sum(1 for x in result if not x["is_travelling"] and x["hours"] > 0)
             value = count * amount
-            basis = f"{count} work shifts"
+            basis = "Per Shift"
         else:
             count = len(work_weeks)
             value = count * amount
-            basis = f"{count} work weeks"
+            basis = "Per Week"
         if value:
             allowance_breakdown.append({"name": rule.get("name", "Allowance"),
                                         "frequency": frequency, "basis": basis,

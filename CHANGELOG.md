@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to HATimeSheets are documented here.
+## [0.1.9] - 2026-11-16
+
+### Fixed
+- Saved weekday roster rules with their stable weekday index so the configured schedule is applied to the correct day.
+- Removed the unused roster-level break field; unpaid breaks remain defined per time entry.
+
 
 ## [0.1.8] - 2026-11-16
 

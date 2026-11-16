@@ -49,6 +49,7 @@ DEFAULT_SETTINGS = {
          "scope": "work", "multiplier": 2.0, "mode": "replace"}
     ],
     "allowances": [],
+    "payroll_codes": {"ordinary_1_0":"Ordinary 1.0","ordinary_1_5":"Ordinary 1.5","overtime_1_5":"Overtime 1.5","overtime_2_0":"Overtime 2.0","public_holiday":"Public Holiday","travel_ordinary":"Travel-OTH Ordinary","travel_overtime":"Travel-OTH OT","annual_leave":"Annual Leave","sick_leave":"Sick Leave"},
     "payg_annual_years": {"2026-27": {"resident_brackets": [
         {"lower": 0, "upper": 18200, "base_tax": 0, "rate": 0},
         {"lower": 18200, "upper": 45000, "base_tax": 0, "rate": 0.15},

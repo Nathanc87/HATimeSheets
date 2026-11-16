@@ -291,7 +291,11 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         week_end = item["start"] + timedelta(days=6)
         fy_start = week_end.year if week_end.month >= 7 else week_end.year - 1
         fy_label = f"{fy_start}-{str(fy_start + 1)[-2:]}"
-        year_settings = settings.get("payg_annual_years", {}).get(fy_label) or settings.get("payg_years", {}).get(fy_label)
+        # Combine annual bracket editor data with the ATO weekly coefficient
+        # table. Weekly coefficients take precedence because they include Medicare.
+        year_settings = {}
+        year_settings.update(settings.get("payg_annual_years", {}).get(fy_label) or {})
+        year_settings.update(settings.get("payg_years", {}).get(fy_label) or {})
         withholding = calculate_weekly_payg(
             item["gross"], year_settings,
             bool(settings.get("payg_tax_free_threshold", True)),
@@ -321,11 +325,31 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
 
 def calculate_weekly_payg(gross, year_settings, claim_tax_free_threshold=True,
                           help_enabled=False, extra_withholding=0):
-    """Estimate weekly income tax from annual resident brackets; Medicare levy excluded."""
+    """Calculate weekly PAYG using ATO weekly coefficients where available.
+
+    The ATO Scale 1 and Scale 2 coefficients include the standard Medicare
+    levy. Annual resident brackets are retained as a fallback for years where
+    weekly coefficients have not been configured.
+    """
     if not year_settings:
         return None
     earnings = max(0.0, float(gross))
     extra = _round_dollar(max(0, float(extra_withholding or 0)))
+    # ATO weekly withholding uses earnings with cents ignored (represented as
+    # the whole-dollar amount plus 0.99 in the published formula).
+    scale = "scale2" if claim_tax_free_threshold else "scale1"
+    weekly_brackets = year_settings.get(scale) or []
+    if weekly_brackets:
+        x = int(earnings) + 0.99
+        payg = _round_dollar(_coefficient_withholding(x, weekly_brackets))
+        help_amount = 0
+        if help_enabled:
+            help_scale = "help_scale2" if claim_tax_free_threshold else "help_scale1"
+            help_amount = _round_dollar(_coefficient_withholding(x, year_settings.get(help_scale, [])))
+        total = payg + help_amount + extra
+        return {"payg": payg, "help": help_amount, "extra": extra,
+                "total_withheld": total, "net": round(earnings - total, 2)}
+
     brackets = year_settings.get("resident_brackets") or year_settings.get("brackets")
     if brackets:
         annual_income = earnings * 52
@@ -334,17 +358,7 @@ def calculate_weekly_payg(gross, year_settings, claim_tax_free_threshold=True,
         total = payg + extra
         return {"payg": payg, "help": 0, "extra": extra,
                 "total_withheld": total, "net": round(earnings - total, 2)}
-    # Backward compatibility for installations with saved ATO coefficient tables.
-    x = int(earnings) + 0.99
-    scale = "scale2" if claim_tax_free_threshold else "scale1"
-    payg = _round_dollar(_coefficient_withholding(x, year_settings.get(scale, [])))
-    help_amount = 0
-    if help_enabled:
-        help_scale = "help_scale2" if claim_tax_free_threshold else "help_scale1"
-        help_amount = _round_dollar(_coefficient_withholding(x, year_settings.get(help_scale, [])))
-    total = payg + help_amount + extra
-    return {"payg": payg, "help": help_amount, "extra": extra,
-            "total_withheld": total, "net": round(earnings - total, 2)}
+    return None
 
 
 def calculate_annual_resident_tax(annual_income, brackets):

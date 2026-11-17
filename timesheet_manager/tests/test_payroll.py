@@ -368,6 +368,30 @@ class TierCostCodeTests(unittest.TestCase):
         self.assertEqual(final_segment["pay_code"], "CUSTOM-OT1")
         self.assertEqual(final_segment["multiplier"], 1.5)
 
+    def test_travelling_shift_uses_configured_travel_tier_multiplier_and_code(self):
+        settings = {
+            "base_rate": 40,
+            "week_start_day": 0,
+            "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
+            "travel_rules": [
+                {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary", "cost_code": "TRAVEL-REG"},
+                {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime", "cost_code": "TRAVEL-OT"},
+            ],
+            "penalty_rules": [],
+        }
+        shifts = [
+            {"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "05:30",
+             "finish_time": "16:00", "break_minutes": 30}
+            for i in range(1, 5)
+        ]
+        shifts.append({"id": 5, "work_date": "2026-11-20", "start_time": "05:30",
+                       "finish_time": "16:00", "break_minutes": 30, "is_travelling": True})
+        result = calculate(shifts, [], settings)
+        travel_segment = result["shifts"][-1]["segments"][0]
+        self.assertEqual(travel_segment["pay_code"], "TRAVEL-OT 1.8")
+        self.assertEqual(travel_segment["multiplier"], 1.8)
+        self.assertEqual(travel_segment["hours"], 10.0)
+
     def test_standalone_travel_cost_code_comes_from_the_reached_travel_tier(self):
         settings = {
             "base_rate": 40,

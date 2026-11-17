@@ -53,7 +53,14 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     tiers = sorted(settings.get("overtime_tiers", []), key=lambda x: float(x.get("after_hours", 0)))
     travel_tiers = sorted(settings.get("travel_rules", []), key=lambda x: float(x.get("after_hours", 0)))
     penalties = [p for p in settings.get("penalty_rules", []) if p.get("enabled", True)]
-    rate = settings.get("base_rate")
+    rate_history = sorted([x for x in settings.get("pay_rate_history", []) if x.get("effective_from")], key=lambda x: x["effective_from"])
+    def rate_for_date(day_text):
+        applicable = [x for x in rate_history if x["effective_from"] <= day_text]
+        if applicable:
+            value = applicable[-1].get("rate")
+            return None if value in (None, "") else float(value)
+        legacy = settings.get("base_rate")
+        return None if legacy in (None, "") else float(legacy)
     schedule = settings.get("normal_hours_schedule")
     code_labels = {"ordinary_1_0":"Ordinary 1.0","ordinary_1_5":"Ordinary 1.5","overtime_1_5":"Overtime 1.5","overtime_2_0":"Overtime 2.0","public_holiday":"Public Holiday","travel_ordinary":"Travel-OTH Ordinary","travel_overtime":"Travel-OTH OT","annual_leave":"Annual Leave","sick_leave":"Sick Leave"}
     code_labels.update(settings.get("payroll_codes", {}) or {})
@@ -202,12 +209,13 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                                  "hours": round(mins / 60, 4),
                                  "multiplier": float(rule.get("multiplier", 0))})
 
-        earnings = None if rate in (None, "") else round(sum(x["hours"] * float(rate) * x["multiplier"] for x in segments), 2)
+        applied_rate = rate_for_date(d.isoformat())
+        earnings = None if applied_rate is None else round(sum(x["hours"] * applied_rate * x["multiplier"] for x in segments), 2)
         result.append({"id": s["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
                        "payable_hours": round(payable_minutes / 60, 4),
                        "is_travelling": travelling, "is_overseas": bool(s.get("is_overseas", False)), "is_public_holiday": bool(s.get("is_public_holiday", False)), "leave_type": s.get("leave_type", "work"),
                        "weekly_hours_including_shift": round((earlier + (0 if travelling else mins)) / 60, 4),
-                       "segments": segments, "estimated_earnings": earnings,
+                       "segments": segments, "base_rate": applied_rate, "estimated_earnings": earnings,
                        "notes": s.get("notes", "")})
 
     travel_result = []
@@ -222,15 +230,16 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
         position = max(0, work_before - mins + earlier_travel)
         multiplier, label, travel_cost_code = travel_tier_at(position)
         pay_code = f"{travel_cost_code} {multiplier:.1f}"
-        earnings = None if rate in (None, "") else round((mins / 60) * float(rate) * multiplier, 2)
+        applied_rate = rate_for_date(d.isoformat())
+        earnings = None if applied_rate is None else round((mins / 60) * applied_rate * multiplier, 2)
         travel_result.append({"id": t["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),
                               "category": label, "pay_code": pay_code, "multiplier": multiplier,
-                              "estimated_earnings": earnings, "notes": t.get("notes", "")})
+                              "base_rate": applied_rate, "estimated_earnings": earnings, "notes": t.get("notes", "")})
 
     total_hours = round(sum(x["hours"] for x in result if not x["is_travelling"]), 2)
     total_travel = round(sum(x["payable_hours"] for x in result if x["is_travelling"]) +
                          sum(x["hours"] for x in travel_result), 2)
-    earnings_known = rate not in (None, "")
+    earnings_known = all(x["estimated_earnings"] is not None for x in result + travel_result)
     work_pay = sum(x["estimated_earnings"] or 0 for x in result)
     travel_pay = sum(x["estimated_earnings"] or 0 for x in travel_result)
 

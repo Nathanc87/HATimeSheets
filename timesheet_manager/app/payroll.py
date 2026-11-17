@@ -159,7 +159,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                     multiplier = max(base, 1.5 if daily_overtime else 1.0)
                 else:
                     multiplier = max(base, 1.5) if outside else base
-                category = ("Overseas" if overseas else
+                category = ("Work - Travel" if overseas else
                             "Travel" if s.get("is_travelling") else
                             "Out-of-hours" if outside and base < 1.5 else label)
                 if overseas:

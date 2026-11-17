@@ -1,3 +1,11 @@
+## [0.1.51] - 2026-11-17
+
+### Changed
+- Set the supplied ordinary overtime and travel tier descriptions, cost-code names, thresholds and multipliers as the built-in defaults.
+- Preserve existing custom settings; migrate only matching legacy built-in tier descriptions to the new default wording.
+- Confirm the 2026-27 resident tax brackets already match the supplied defaults.
+- Update the Travelling note to: “(Travelling is 10hrs max per day with no penalties included)”.
+
 ## [0.1.50] - 2026-11-17
 
 ### Changed

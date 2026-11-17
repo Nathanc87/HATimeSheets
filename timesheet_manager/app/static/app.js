@@ -62,7 +62,7 @@ function recordHtml(title,sub,note,right){return '<div class="record"><div><b>'+
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 let entrySubmitting=false;
 let entryBaseline="";
-function entrySnapshot(){const f=$("#entry-form");return JSON.stringify({data:formObject(f),checks:["is_public_holiday","is_travelling","is_overseas"].map(k=>f.elements[k].checked)})}
+function entrySnapshot(){return JSON.stringify(formObject($("#entry-form")))}
 function entryIsDirty(){return !!entryBaseline&&entrySnapshot()!==entryBaseline}
 function updateEntryDirtyState(){const dirty=entryIsDirty(),status=$("#entry-dirty-status");if(status)status.textContent=dirty?"Unsaved changes":"";const date=$("#entry-form").elements.work_date.value,label=$("#entry-day-label");if(label)label.textContent=date?displayLongDate(parseLocalDate(date)):"Choose a date to edit"}
 $("#entry-form").addEventListener("input",updateEntryDirtyState);
@@ -71,8 +71,12 @@ async function saveEntry(){
  if(entrySubmitting)return false;
  entrySubmitting=true;const saveButton=$("#entry-save");if(saveButton)saveButton.disabled=true;
  const f=$("#entry-form"),d=formObject(f),id=d.entry_id;delete d.entry_id;d.break_minutes=Number(d.break_minutes||0);
- for(const k of ["is_public_holiday","is_travelling","is_overseas"])d[k]=f.elements[k].checked;
- d.leave_type=d.leave_type||"work";d.project=d.project||"";
+ const selectedType=d.leave_type||"work";
+ d.is_public_holiday=selectedType==="public_holiday";
+ d.is_overseas=selectedType==="overseas";
+ d.is_travelling=f.elements.is_travelling.checked;
+ d.leave_type=["annual_leave","sick_leave"].includes(selectedType)?selectedType:"work";
+ d.project=d.project||"";
  if(d.leave_type!=="work"){d.start_time="00:00";d.finish_time="10:00";d.break_minutes=0;d.is_travelling=false;d.is_overseas=false;d.is_public_holiday=false;}
  try{
   const result=await api(id?"api/shifts/"+id:"api/shifts",{method:id?"PUT":"POST",body:JSON.stringify(d)});
@@ -136,10 +140,10 @@ function renderShiftCalendar(rows,config,holidays){
  root.innerHTML=out;
 }
 let shiftCache=[];
-function toggleLeaveFields(){const leave=$("#leave-type").value!=="work";$("#work-time-fields").hidden=leave;$("#leave-entry-note").hidden=!leave;const f=$("#entry-form");f.elements.start_time.required=!leave;f.elements.finish_time.required=!leave;}
+function toggleLeaveFields(){const leave=["annual_leave","sick_leave"].includes($("#leave-type").value);$("#work-time-fields").hidden=leave;$("#leave-entry-note").hidden=!leave;const f=$("#entry-form");f.elements.start_time.required=!leave;f.elements.finish_time.required=!leave;}
 $("#leave-type").addEventListener("change",toggleLeaveFields);
-function newEntry(dateValue){const f=$("#entry-form");f.reset();f.elements.entry_id.value="";f.elements.start_time.value="05:30";f.elements.finish_time.value="16:00";f.elements.break_minutes.value=30;f.elements.is_public_holiday.checked=false;f.elements.is_travelling.checked=false;f.elements.is_overseas.checked=false;f.elements.leave_type.value="work";f.elements.project.value="";toggleLeaveFields();$("#entry-heading").textContent="New time entry";$("#entry-save").textContent="Save time entry";if(dateValue)f.elements.work_date.value=dateValue;else setDefaultDates();entryBaseline=entrySnapshot();updateEntryDirtyState();showPage("entry")}
-function editShift(id){const s=shiftCache.find(x=>Number(x.id)===Number(id));if(!s)return;const f=$("#entry-form");f.elements.entry_id.value=s.id;f.elements.work_date.value=s.work_date;f.elements.start_time.value=s.start_time;f.elements.finish_time.value=s.finish_time;f.elements.break_minutes.value=s.break_minutes;f.elements.notes.value=s.notes||"";f.elements.is_public_holiday.checked=!!s.is_public_holiday;f.elements.is_travelling.checked=!!s.is_travelling;f.elements.is_overseas.checked=!!s.is_overseas;f.elements.leave_type.value=s.leave_type||"work";f.elements.project.value=s.project||"";toggleLeaveFields();$("#entry-heading").textContent="Edit time entry";$("#entry-save").textContent="Save changes";entryBaseline=entrySnapshot();updateEntryDirtyState();showPage("entry")}
+function newEntry(dateValue){const f=$("#entry-form");f.reset();f.elements.entry_id.value="";f.elements.start_time.value="05:30";f.elements.finish_time.value="16:00";f.elements.break_minutes.value=30;f.elements.is_public_holiday.value="false";f.elements.is_travelling.checked=false;f.elements.is_overseas.value="false";f.elements.leave_type.value="work";f.elements.project.value="";toggleLeaveFields();$("#entry-heading").textContent="New time entry";$("#entry-save").textContent="Save time entry";if(dateValue)f.elements.work_date.value=dateValue;else setDefaultDates();entryBaseline=entrySnapshot();updateEntryDirtyState();showPage("entry")}
+function editShift(id){const s=shiftCache.find(x=>Number(x.id)===Number(id));if(!s)return;const f=$("#entry-form");f.elements.entry_id.value=s.id;f.elements.work_date.value=s.work_date;f.elements.start_time.value=s.start_time;f.elements.finish_time.value=s.finish_time;f.elements.break_minutes.value=s.break_minutes;f.elements.notes.value=s.notes||"";f.elements.is_public_holiday.value=String(!!s.is_public_holiday);f.elements.is_travelling.checked=!!s.is_travelling;f.elements.is_overseas.value=String(!!s.is_overseas);f.elements.leave_type.value=s.leave_type&&s.leave_type!=="work"?s.leave_type:s.is_overseas?"overseas":s.is_public_holiday?"public_holiday":"work";f.elements.project.value=s.project||"";toggleLeaveFields();$("#entry-heading").textContent="Edit time entry";$("#entry-save").textContent="Save changes";entryBaseline=entrySnapshot();updateEntryDirtyState();showPage("entry")}
 async function changeEntryDay(offset){
  const current=$("#entry-form").elements.work_date.value;if(!current)return;
  if(entryIsDirty()){

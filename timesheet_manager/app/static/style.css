@@ -207,3 +207,8 @@
 .annual-chart-switch{display:flex;gap:5px;flex-shrink:0}
 .annual-chart-switch .small-btn{min-width:72px}
 .annual-chart-switch .small-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+
+.calendar-day-button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;min-height:92px;padding:7px 3px}
+.calendar-day-detail{display:block;max-width:100%;font-size:10px;line-height:1.2;font-weight:600;color:var(--accent2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.calendar-day-button strong{margin-top:auto}

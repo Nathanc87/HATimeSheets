@@ -17,6 +17,8 @@ jobs:
         run: pip install -r timesheet_manager/requirements.txt
       - name: Compile Python
         run: python -m compileall -q timesheet_manager/app
+      - name: Check frontend JavaScript
+        run: node --check timesheet_manager/app/static/app.js
       - name: Run payroll tests
         env:
           PYTHONPATH: timesheet_manager

@@ -180,3 +180,14 @@
 .settings-shell>.settings-panel{margin-top:16px}
 @media(max-width:850px){.settings-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.settings-nav-button{justify-content:flex-start}#schedule-rules .rule-row,#overtime-rules .rule-row,#travel-rules .rule-row{grid-template-columns:1fr 1fr}.schedule-day-name{grid-column:1/-1;padding:3px 0}.settings-form .actions{flex-wrap:wrap}}
 @media(max-width:520px){.settings-nav{grid-template-columns:1fr 1fr;gap:4px;padding:6px}.settings-nav-button{font-size:11px;padding:9px 7px}.settings-nav-button span{white-space:normal}#schedule-rules .rule-row,#overtime-rules .rule-row,#travel-rules .rule-row{grid-template-columns:1fr 1fr}.settings-shell{padding:14px}}
+
+
+/* Privacy mode: conceal monetary values and charts while retaining hours and attendance. */
+.header-actions{display:flex;align-items:center;gap:16px}
+.privacy-toggle{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.privacy-toggle:hover{border-color:var(--accent2);background:#20364a}
+.privacy-mode .earnings-chart{position:relative;min-height:170px;visibility:hidden}
+.privacy-mode .earnings-chart:after{content:"Pay figures hidden in Privacy Mode";visibility:visible;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;background:var(--panel);border:1px dashed var(--line);border-radius:9px}
+.privacy-mode #pay-rate-history input[data-key="rate"]{-webkit-text-security:disc}
+.privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-inner-spin-button,.privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+@media(max-width:700px){.header-actions{gap:8px;flex-direction:column;align-items:flex-end}.privacy-toggle{padding:6px 9px}}

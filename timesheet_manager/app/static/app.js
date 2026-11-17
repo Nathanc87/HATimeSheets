@@ -2,24 +2,35 @@ const $ = s => document.querySelector(s);
 let settings = {};
 let paygYears = {};
 let selectedPaygYear = "";
+let privacyMode = true;
 const names = {dashboard:"Dashboard",shifts:"Time entries",entry:"New time entry",reports:"Timesheet report",settings:"Settings"};
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2600)}
 async function api(url,options={}){const r=await fetch(url,{headers:{"Content-Type":"application/json"},...options});if(!r.ok){const t=await r.text();let message=t||r.statusText;try{const body=JSON.parse(t);message=body.detail||body.message||message}catch{}throw new Error(message)}return r.status===204?null:r.json()}
 function showPage(page){if(!names[page])page="dashboard";document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===page));document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x.dataset.page===page));$("#page-title").textContent=names[page];if(page==="dashboard")loadDashboard();if(page==="shifts")loadShifts();if(page==="reports"){reportWeekStart=null;loadReport();}if(page==="settings")loadSettings();history.replaceState(null,"","#"+page)}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+setPrivacyMode(true);
 function showSettingsPanel(key){document.querySelectorAll("[data-settings-panel]").forEach(x=>x.classList.toggle("active",x.dataset.settingsPanel===key));document.querySelectorAll(".settings-nav-button").forEach(x=>x.classList.toggle("active",x.dataset.settingsPage===key));}
 document.querySelectorAll(".settings-nav-button").forEach(b=>b.addEventListener("click",()=>showSettingsPanel(b.dataset.settingsPage)));
 function formObject(form){return Object.fromEntries(new FormData(form).entries())}
 function renderPayRates(items){
  const rows=items&&items.length?items:[{effective_from:"2026-07-01",rate:null}];
- $("#pay-rate-history").innerHTML=rows.map((r,i)=>'<div class="rule-row pay-rate-row" data-index="'+i+'"><label>Effective from<input data-key="effective_from" type="date" value="'+esc(r.effective_from||"")+'"></label><label>Hourly rate ($)<input data-key="rate" type="number" min="0" step="0.01" placeholder="Not configured" value="'+(r.rate??"")+'"></label><button type="button" class="danger" onclick="removePayRate('+i+')" '+(rows.length===1?"disabled":"")+'>Remove</button></div>').join("");
+ $("#pay-rate-history").innerHTML=rows.map((r,i)=>'<div class="rule-row pay-rate-row" data-index="'+i+'"><label>Effective from<input data-key="effective_from" type="date" value="'+esc(r.effective_from||"")+'"></label><label>Hourly rate ($)<input data-key="rate" type="'+(privacyMode?"password":"number")+'" min="0" step="0.01" placeholder="Not configured" value="'+(r.rate??"")+'"></label><button type="button" class="danger" onclick="removePayRate('+i+')" '+(rows.length===1?"disabled":"")+'>Remove</button></div>').join("");
 }
 function collectPayRates(){return [...document.querySelectorAll("#pay-rate-history .pay-rate-row")].map(row=>({effective_from:row.querySelector('[data-key="effective_from"]').value,rate:row.querySelector('[data-key="rate"]').value===""?null:Number(row.querySelector('[data-key="rate"]').value)}))}
 function addPayRate(){const rows=collectPayRates();rows.push({effective_from:"",rate:null});renderPayRates(rows)}
 function removePayRate(index){const rows=collectPayRates();if(rows.length<=1)return;rows.splice(index,1);renderPayRates(rows)}
 function setDefaultDates(){const today=new Date().toISOString().slice(0,10);document.querySelectorAll('input[type="date"]').forEach(x=>{if(!x.value)x.value=today})}
 function hours(v){return Number(v||0).toFixed(2)+" h"}
-function money(v){return v==null?"Not configured":new Intl.NumberFormat(undefined,{style:"currency",currency:settings.currency||"AUD"}).format(v)}
+function money(v){return privacyMode?"••••••":v==null?"Not configured":new Intl.NumberFormat(undefined,{style:"currency",currency:settings.currency||"AUD"}).format(v)}
+function setPrivacyMode(enabled){
+ privacyMode=!!enabled;
+ document.body.classList.toggle("privacy-mode",privacyMode);
+ const button=$("#privacy-toggle");
+ if(button){button.textContent=privacyMode?"◉ Privacy on":"◎ Privacy off";button.setAttribute("aria-pressed",String(privacyMode));button.title=privacyMode?"Show pay figures":"Hide pay figures"}
+ const rows=$("#pay-rate-history");
+ if(rows){const values=collectPayRates();renderPayRates(values)}
+}
+function togglePrivacyMode(){setPrivacyMode(!privacyMode)}
 let dashboardWeekStart=null;
 let dashboardWeekStartDay=null;
 function dateText(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}

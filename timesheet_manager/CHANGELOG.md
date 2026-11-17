@@ -1,3 +1,11 @@
+## [0.1.54] - 2026-11-17
+
+### Changed
+- Add Privacy Mode, enabled by default on every app load, with a header toggle to reveal or hide pay figures.
+- Mask monetary amounts across dashboard charts, report totals and allowance tables while leaving hours and time entries visible.
+- Conceal the hourly rate field in the pay-rate history editor while Privacy Mode is enabled.
+- Bump static asset and add-on versions to 0.1.54.
+
 ## [0.1.53] - 2026-11-17
 
 ### Changed

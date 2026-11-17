@@ -19,7 +19,25 @@ function renderPayRates(items){
 function collectPayRates(){return [...document.querySelectorAll("#pay-rate-history .pay-rate-row")].map(row=>({effective_from:row.querySelector('[data-key="effective_from"]').value,rate:row.querySelector('[data-key="rate"]').value===""?null:Number(row.querySelector('[data-key="rate"]').value)}))}
 function addPayRate(){const rows=collectPayRates();rows.push({effective_from:"",rate:null});renderPayRates(rows)}
 function removePayRate(index){const rows=collectPayRates();if(rows.length<=1)return;rows.splice(index,1);renderPayRates(rows)}
-function setDefaultDates(){const today=new Date().toISOString().slice(0,10);document.querySelectorAll('input[type="date"]').forEach(x=>{if(!x.value)x.value=today})}
+function setDefaultDates(){const today=new Date().toISOString().slice(0,10);document.querySelectorAll('input[type="date"]:not(#dashboard-chart-start):not(#dashboard-chart-end)').forEach(x=>{if(!x.value)x.value=today})}
+function initialiseSelectedChartDates(){
+ const from=$("#dashboard-chart-start"),to=$("#dashboard-chart-end");
+ if(from.value&&to.value)return;
+ const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);
+ const currentStart=payCycleStart(settings,today);
+ let periodStart,periodEnd;
+ if(currentStart){
+  periodEnd=new Date(currentStart);periodEnd.setDate(periodEnd.getDate()-1);
+  periodStart=payCycleStart(settings,periodEnd)||new Date(periodEnd);
+ }else{
+  const day=Number(settings.week_start_day??0);
+  const currentWeekStart=new Date(today);
+  currentWeekStart.setDate(currentWeekStart.getDate()-((currentWeekStart.getDay()+6-day)%7));
+  periodEnd=new Date(currentWeekStart);periodEnd.setDate(periodEnd.getDate()-1);
+  periodStart=new Date(periodEnd);periodStart.setDate(periodStart.getDate()-6);
+ }
+ from.value=dateText(periodStart);to.value=dateText(periodEnd);
+}
 function hours(v){return Number(v||0).toFixed(2)+" h"}
 function money(v){return privacyMode?"••••••":v==null?"Not configured":new Intl.NumberFormat(undefined,{style:"currency",currency:settings.currency||"AUD"}).format(v)}
 function setPrivacyMode(enabled){
@@ -90,7 +108,7 @@ function shiftReportWeek(amount){
  $("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport();
 }
 function shiftDashboardWeek(amount){if(!dashboardWeekStart)return;dashboardWeekStart.setDate(dashboardWeekStart.getDate()+amount*7);loadDashboard()}
-async function loadDashboard(){try{settings=await api("api/settings");const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
+async function loadDashboard(){try{settings=await api("api/settings");initialiseSelectedChartDates();const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
 function earningsChartHtml(report){
  const totals={};
  (report.shifts||[]).forEach(s=>(s.segments||[]).forEach(seg=>{

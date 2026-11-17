@@ -1,3 +1,11 @@
+## [0.1.56] - 2026-11-17
+
+### Changed
+- Default the Reports date range to the most recently completed pay cycle using the configured Cycle Anchor / First Day and cycle type.
+- For a Wednesday-to-Tuesday weekly cycle, select the prior Wednesday-to-Tuesday period from Wednesday through Tuesday, including Thursday payday.
+- Keep manual date editing and previous/next pay-period navigation; use the configured overtime week start only as a fallback when no pay-cycle anchor is set.
+- Bump add-on and static asset versions to 0.1.56.
+
 ## [0.1.55] - 2026-11-17
 
 ### Changed

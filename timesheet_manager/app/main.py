@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from openpyxl import Workbook
-from openpyxl.styles import Alignment
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 
 from .db import connect, init_db, get_settings, save_settings, now_iso
 from .payroll import calculate, cycle_bounds
@@ -342,49 +342,159 @@ def export_csv(start: str | None = None, end: str | None = None):
 @app.get("/api/export.xlsx")
 def export_xlsx(start: str | None = None, end: str | None = None):
     from .payroll import minutes_between
-    result, settings, shifts, travel = report_data(start, end)
+
+    period_result, settings, shifts, travel = report_data(start, end)
+    today = date.today()
+    cycle = cycle_bounds(settings.get("pay_cycle_start_date", ""),
+                         settings.get("pay_cycle_type", "fortnightly"),
+                         settings.get("custom_cycle_days", 14), today)
+    if start and end:
+        period_start, period_end = date.fromisoformat(start), date.fromisoformat(end)
+    elif cycle:
+        period_start, period_end = cycle
+    else:
+        period_start = period_end = today
+
+    # Financial-year-to-date is measured from 1 July through the selected
+    # period end, matching the Australian financial year.
+    fy_start = date(period_end.year if period_end.month >= 7 else period_end.year - 1, 7, 1)
+    ytd_result, _, _, _ = report_data(fy_start.isoformat(), period_end.isoformat())
+
+    def earnings_summary(data, from_date=None, to_date=None):
+        rows = {}
+        def add(description, hours, base_rate, multiplier):
+            if from_date and to_date:
+                # The caller filters the dated item before adding it.
+                pass
+            hours = float(hours or 0)
+            if hours <= 0:
+                return
+            rate = None if base_rate in (None, "") else round(float(base_rate) * float(multiplier or 1), 4)
+            key = (str(description or "Other"), rate)
+            row = rows.setdefault(key, {"description": key[0], "rate": rate, "hours": 0.0, "amount": 0.0, "amount_known": rate is not None})
+            row["hours"] += hours
+            if rate is None:
+                row["amount_known"] = False
+            else:
+                row["amount"] += hours * rate
+        for item in data.get("shifts", []):
+            day = date.fromisoformat(item["date"])
+            if from_date and day < from_date or to_date and day > to_date:
+                continue
+            for segment in item.get("segments", []):
+                add(segment.get("pay_code") or segment.get("category"), segment.get("hours"),
+                    item.get("base_rate"), segment.get("multiplier", 1))
+        for item in data.get("travel", []):
+            day = date.fromisoformat(item["date"])
+            if from_date and day < from_date or to_date and day > to_date:
+                continue
+            add(item.get("pay_code") or item.get("category"), item.get("hours"),
+                item.get("base_rate"), item.get("multiplier", 1))
+        for row in rows.values():
+            row["hours"] = round(row["hours"], 4)
+            row["amount"] = round(row["amount"], 2) if row["amount_known"] else None
+        return rows
+
+    def allowance_summary(data):
+        rows = {}
+        for item in data.get("allowances", []):
+            amount = float(item.get("amount", 0) or 0)
+            unit_rate = item.get("unit_amount")
+            rate = None if unit_rate in (None, "") else float(unit_rate)
+            frequency = item.get("frequency", "")
+            key = (str(item.get("name", "Allowance")), rate, frequency)
+            units = (amount / rate) if rate not in (None, 0) else 1.0
+            row = rows.setdefault(key, {"description": key[0], "rate": rate, "hours": 0.0, "amount": 0.0})
+            row["hours"] += units
+            row["amount"] += amount
+        for row in rows.values():
+            row["hours"] = round(row["hours"], 4)
+            row["amount"] = round(row["amount"], 2)
+        return rows
+
+    period_earnings = earnings_summary(ytd_result, period_start, period_end)
+    ytd_earnings = earnings_summary(ytd_result, fy_start, period_end)
+    period_allowances = allowance_summary(period_result)
+    ytd_allowances = allowance_summary(ytd_result)
+
     wb = Workbook()
     ws = wb.active
-    ws.title = "Timesheet"
-    ws.append(["Date", "Time in", "Time out", "Unpaid break (minutes)", "Total paid hours", "Rate breakdown", "Entry type", "Overseas", "Notes"])
-    shift_map = {s["id"]: s for s in shifts}
-    total_hours = 0.0
-    rate_totals = {}
-    for item in result["shifts"]:
-        s = shift_map[item["id"]]
-        paid_minutes = max(0, minutes_between(s["start_time"], s["finish_time"]) - int(s.get("break_minutes", 0)))
-        payable_minutes = min(paid_minutes, 600) if item["is_travelling"] else paid_minutes
-        total_hours += payable_minutes / 60
-        breakdown = "; ".join("{}: {:.2f}h @ {:.2f}x".format(seg["category"], seg["hours"], seg["multiplier"]) for seg in item.get("segments", []))
-        for seg in item.get("segments", []):
-            key = "{} ({:.2f}x)".format(seg["category"], seg["multiplier"])
-            rate_totals[key] = rate_totals.get(key, 0) + float(seg["hours"])
-        kind = "Travel" if item["is_travelling"] else ("Work - Overseas" if item["is_overseas"] else ("Public holiday" if s.get("is_public_holiday") else "Work"))
-        ws.append([item["date"], s["start_time"], s["finish_time"], s["break_minutes"],
-                   round(payable_minutes / 60, 2), breakdown, kind, bool(item["is_overseas"]), item["notes"]])
-    allowance_sheet = wb.create_sheet("Allowances")
-    allowance_sheet.append(["Allowance", "Allowance amount", "Frequency", "Basis", "Period amount"])
-    for item in result.get("allowances", []):
-        allowance_sheet.append([item["name"], item.get("unit_amount", item["amount"]), item["frequency"], item["basis"], item["amount"]])
-    totals_sheet = wb.create_sheet("Totals")
-    totals_sheet.append(["Rate category", "Hours"])
-    for category, hours_value in rate_totals.items():
-        totals_sheet.append([category, round(hours_value, 2)])
-    totals_sheet.append(["Total paid hours", round(total_hours, 2)])
-    totals_sheet.append(["Total allowances", result.get("total_allowances", 0)])
-    totals_sheet.append(["Estimated gross", result["estimated_gross"]])
-    totals_sheet.append(["Estimated PAYG", result.get("estimated_payg")])
-    totals_sheet.append(["Total withheld", result.get("total_withheld")])
-    totals_sheet.append(["Estimated take-home", result.get("estimated_net")])
-    for sheet in wb.worksheets:
-        sheet.freeze_panes = "A2"
-        sheet.auto_filter.ref = sheet.dimensions
-        for col in sheet.columns:
-            letter = col[0].column_letter
-            sheet.column_dimensions[letter].width = min(55, max(12, max(len(str(c.value or "")) for c in col) + 2))
-    ws.column_dimensions["I"].width = 55
-    for row in ws.iter_rows(min_row=2, min_col=9, max_col=9):
-        row[0].alignment = Alignment(wrap_text=True, vertical="top")
+    ws.title = "Pay Summary"
+    headers = ["Description", "Dates", "Hours/Units", "Rate", "Amount", "YTD Hours", "YTD Amount"]
+    title_font = Font(bold=True, italic=True, size=11)
+    header_font = Font(bold=True)
+    header_fill = PatternFill("solid", fgColor="E8EDF3")
+    ytd_fill = PatternFill("solid", fgColor="B7E1CD")
+    total_font = Font(bold=True)
+    thin_grey = Side(style="thin", color="D9E0E8")
+    date_label = f"{period_start:%d/%m/%Y} - {period_end:%d/%m/%Y}"
+
+    def write_section(title, period_rows, ytd_rows):
+        ws.append([title])
+        title_row = ws.max_row
+        ws.cell(title_row, 1).font = title_font
+        ws.append(headers)
+        header_row = ws.max_row
+        for cell in ws[header_row]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = Border(bottom=thin_grey)
+        for key in sorted(set(period_rows) | set(ytd_rows), key=lambda x: (x[0].casefold(), x[1] if x[1] is not None else -1)):
+            current = period_rows.get(key, {})
+            year = ytd_rows.get(key, {})
+            has_period = bool(current)
+            rate = current.get("rate", year.get("rate"))
+            ws.append([
+                key[0],
+                date_label if has_period else "",
+                current.get("hours", "") if has_period else "",
+                rate if has_period and rate is not None else "",
+                current.get("amount") if has_period else "",
+                year.get("hours", ""),
+                year.get("amount") if year else ""
+            ])
+        total_row = ws.max_row + 1
+        ws.append([
+            f"Total {title.lower()}",
+            "",
+            round(sum(x.get("hours", 0) for x in period_rows.values()), 2),
+            "",
+            round(sum(x.get("amount", 0) for x in period_rows.values() if x.get("amount") is not None), 2),
+            round(sum(x.get("hours", 0) for x in ytd_rows.values()), 2),
+            round(sum(x.get("amount", 0) for x in ytd_rows.values()), 2)
+        ])
+        for cell in ws[total_row]:
+            cell.font = total_font
+            cell.border = Border(top=thin_grey)
+        return total_row
+
+    earnings_total_row = write_section("Earnings", period_earnings, ytd_earnings)
+    ws.append([])
+    allowance_total_row = write_section("Allowances", period_allowances, ytd_allowances)
+
+    ws.freeze_panes = "A3"
+    widths = {"A": 32, "B": 25, "C": 15, "D": 14, "E": 16, "F": 15, "G": 17}
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+    for row in ws.iter_rows(min_row=1, max_col=7):
+        for cell in row:
+            if cell.column == 6:
+                cell.fill = ytd_fill
+            if cell.column in (3, 6) and isinstance(cell.value, (int, float)):
+                cell.number_format = "0.00"
+            elif cell.column in (4,) and isinstance(cell.value, (int, float)):
+                cell.number_format = '$0.0000'
+            elif cell.column in (5, 7) and isinstance(cell.value, (int, float)):
+                cell.number_format = '$#,##0.00'
+            if cell.row not in (1, 2) and cell.value is not None:
+                cell.alignment = Alignment(vertical="center")
+    for row in (earnings_total_row, allowance_total_row):
+        for cell in ws[row]:
+            cell.fill = PatternFill("solid", fgColor="E8EDF3")
+    for row in ws.iter_rows():
+        ws.row_dimensions[row[0].row].height = 20
+
     stream = io.BytesIO()
     wb.save(stream)
     stream.seek(0)

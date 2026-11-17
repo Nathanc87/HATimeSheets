@@ -1,3 +1,10 @@
+## [0.1.49] - 2026-11-17
+
+### Changed
+- Move Overseas and Public holiday from separate checkboxes into the Entry type dropdown alongside Work, Annual Leave and Sick Leave.
+- Keep Overseas and Public holiday as work-hour entries; existing payroll flags and calculations remain unchanged.
+- Preserve existing entries when editing by mapping their saved Overseas and Public holiday flags back to the corresponding dropdown option.
+
 ## [0.1.48] - 2026-11-17
 
 ### Fixed

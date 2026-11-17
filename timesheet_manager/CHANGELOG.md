@@ -1,3 +1,11 @@
+## [0.1.59] - 2026-11-17
+
+### Changed
+- Add Basic and Detailed modes to the Financial Year overview pie chart.
+- Basic mode groups earnings into Work, Work - Travel, Annual Leave, Sick Leave and Public Holiday.
+- Detailed mode retains the individual pay-code breakdown and allowances.
+- Bump add-on and static asset versions to 0.1.59.
+
 ## [0.1.58] - 2026-11-17
 
 ### Changed

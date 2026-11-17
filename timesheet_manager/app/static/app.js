@@ -109,16 +109,52 @@ function shiftReportWeek(amount){
 }
 function shiftDashboardWeek(amount){if(!dashboardWeekStart)return;dashboardWeekStart.setDate(dashboardWeekStart.getDate()+amount*7);loadDashboard()}
 async function loadDashboard(){try{settings=await api("api/settings");initialiseSelectedChartDates();const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
-function earningsChartHtml(report){
+let annualChartMode="basic";
+function setAnnualChartMode(mode){
+ annualChartMode=mode==="detailed"?"detailed":"basic";
+ const description=$("#annual-chart-description");if(description)description.textContent=annualChartMode==="basic"?"Basic breakdown by time-entry type":"Detailed breakdown by individual pay code";
+ document.querySelectorAll("[data-annual-chart-mode]").forEach(button=>{
+  const active=button.dataset.annualChartMode===annualChartMode;
+  button.classList.toggle("active",active);
+  button.setAttribute("aria-pressed",String(active));
+ });
+ loadYearEarningsChart();
+}
+function earningsChartHtml(report,mode="detailed"){
  const totals={};
- (report.shifts||[]).forEach(s=>(s.segments||[]).forEach(seg=>{
-  const label=seg.pay_code||seg.category||"Other";
-  const value=Number(seg.hours||0)*Number(report.base_rate||0)*Number(seg.multiplier||1);
-  if(value>0)totals[label]=(totals[label]||0)+value;
- }));
- (report.travel||[]).forEach(t=>{const value=Number(t.estimated_earnings||0);if(value>0){const label=t.pay_code||"Travel";totals[label]=(totals[label]||0)+value}});
- if(Number(report.total_allowances||0)>0)totals.Allowances=(totals.Allowances||0)+Number(report.total_allowances);
- const items=Object.entries(totals).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+ if(mode==="basic"){
+  const add=(name,value)=>{if(value>0)totals[name]=(totals[name]||0)+value};
+  (report.shifts||[]).forEach(s=>{
+   let category="Work";
+   const leave=s.leave_type||"work";
+   if(leave==="annual_leave")category="Annual Leave";
+   else if(leave==="sick_leave")category="Sick Leave";
+   else if(s.is_public_holiday)category="Public Holiday";
+   else if(s.is_overseas)category="Work - Travel";
+   (s.segments||[]).forEach(seg=>{
+    const code=String(seg.pay_code||seg.category||"").toLowerCase();
+    let group=category;
+    if(leave==="work"&&(code.includes("public holiday")||String(seg.category||"").toLowerCase().includes("public holiday")))group="Public Holiday";
+    const rate=s.base_rate==null?Number(report.base_rate||0):Number(s.base_rate);
+    add(group,Number(seg.hours||0)*rate*Number(seg.multiplier||1));
+   });
+  });
+  // Standalone travel entries are work-related travel earnings.
+  (report.travel||[]).forEach(t=>add("Work - Travel",Number(t.estimated_earnings||0)));
+ }else{
+  (report.shifts||[]).forEach(s=>(s.segments||[]).forEach(seg=>{
+   const label=seg.pay_code||seg.category||"Other";
+   const value=Number(seg.hours||0)*Number(report.base_rate||0)*Number(seg.multiplier||1);
+   if(value>0)totals[label]=(totals[label]||0)+value;
+  }));
+  (report.travel||[]).forEach(t=>{const value=Number(t.estimated_earnings||0);if(value>0){const label=t.pay_code||"Travel";totals[label]=(totals[label]||0)+value}});
+  if(Number(report.total_allowances||0)>0)totals.Allowances=(totals.Allowances||0)+Number(report.total_allowances);
+ }
+ const categoryOrder=["Work","Work - Travel","Annual Leave","Sick Leave","Public Holiday"];
+ const items=Object.entries(totals).filter(x=>x[1]>0).sort((a,b)=>{
+  if(mode==="basic")return categoryOrder.indexOf(a[0])-categoryOrder.indexOf(b[0]);
+  return b[1]-a[1];
+ });
  const total=items.reduce((sum,x)=>sum+x[1],0);
  if(!total)return '<div class="empty">No earnings recorded for this period.</div>';
  const colors=["#2787b8","#56a36c","#d49b32","#a477c5","#d16d6d","#4caaa5","#8b9bb0","#c17b43","#7794d1","#b5a34b"];
@@ -133,7 +169,7 @@ function fyRange(){
 }
 async function loadYearEarningsChart(){
  const p=fyRange();
- try{const r=await api("api/report?start="+p.start+"&end="+p.end);$("#year-earnings-chart").innerHTML=earningsChartHtml(r)}
+ try{const r=await api("api/report?start="+p.start+"&end="+p.end);$("#year-earnings-chart").innerHTML=earningsChartHtml(r,annualChartMode)}
  catch(e){$("#year-earnings-chart").innerHTML='<div class="empty">Could not load earnings.</div>'}
 }
 async function loadSelectedEarningsChart(){

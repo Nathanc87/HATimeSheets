@@ -29,6 +29,10 @@ function setPrivacyMode(enabled){
  if(button){button.textContent=privacyMode?"◉ Privacy on":"◎ Privacy off";button.setAttribute("aria-pressed",String(privacyMode));button.title=privacyMode?"Show pay figures":"Hide pay figures"}
  const rows=$("#pay-rate-history");
  if(rows){const values=collectPayRates();renderPayRates(values)}
+ // Re-render the active view immediately so already-rendered amounts respond
+ // to the toggle without requiring navigation away and back.
+ if($("#dashboard")?.classList.contains("active")) loadDashboard();
+ if($("#reports")?.classList.contains("active")) loadReport();
 }
 function togglePrivacyMode(){setPrivacyMode(!privacyMode)}
 let dashboardWeekStart=null;

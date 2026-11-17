@@ -141,11 +141,15 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual([(x["hours"], x["multiplier"]) for x in result["shifts"][0]["segments"]],
                          [(10.0, 1.3), (1.0, 1.5)])
 
-    def test_overseas_weekly_overtime_starts_after_38_hours(self):
+    def test_overseas_weekly_overtime_uses_travel_tiers(self):
         settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [
                         {"after_hours": 38, "multiplier": 1.5, "label": "OT1"},
                         {"after_hours": 44, "multiplier": 2.0, "label": "OT2"}],
-                    "travel_rules": [], "penalty_rules": []}
+                    "travel_rules": [
+                        {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
+                        {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime 1"},
+                        {"after_hours": 44, "multiplier": 2.3, "label": "Travel overtime 2"}],
+                    "penalty_rules": []}
         shifts = [{"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "20:00",
                    "finish_time": "06:00", "break_minutes": 0, "is_overseas": True}
                   for i in range(1, 5)]

@@ -1,3 +1,10 @@
+## [0.1.55] - 2026-11-17
+
+### Changed
+- Refresh dashboard and report values immediately when Privacy Mode is toggled, without requiring page navigation.
+- Keep earnings pie charts visible in Privacy Mode; hide currency amounts while retaining the percentage labels and chart proportions.
+- Bump add-on and static asset versions to 0.1.55.
+
 ## [0.1.54] - 2026-11-17
 
 ### Changed

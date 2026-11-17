@@ -29,7 +29,6 @@ DEFAULT_SETTINGS = {
         {"day": 5, "label": "Saturday", "enabled": False, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30},
         {"day": 6, "label": "Sunday", "enabled": False, "start_time": "05:30", "finish_time": "16:00", "break_minutes": 30}
     ],
-    "travel_loading": 0.3,
     "public_holiday_credit_hours": 10,
     "public_holiday_credit_days": [0, 1, 2, 3],
     "public_holiday_credit_counts_toward_overtime": None,
@@ -137,6 +136,8 @@ def get_settings(db):
     stored = json.loads(row["payload"])
     merged = DEFAULT_SETTINGS.copy()
     merged.update(stored)
+    # Remove the legacy additive travel/overseas loading; travel tier multipliers are now authoritative.
+    merged.pop("travel_loading", None)
     legacy_tiers = [{"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"}, {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}]
     if stored.get("overtime_tiers") == legacy_tiers:
         merged["overtime_tiers"] = DEFAULT_SETTINGS["overtime_tiers"]

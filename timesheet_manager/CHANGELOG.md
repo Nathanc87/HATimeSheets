@@ -1,3 +1,12 @@
+## [0.1.46] - 2026-11-17
+
+### Changed
+- Reorganise Settings into Data & General, Working Hours, Pay & Overtime, Travel & Overseas, and Public Holidays subpages.
+- Fix weekday names and their weekday indexes in the normal-hours roster; only enabled state and start / finish times are editable.
+- Move overtime and travel cost-code names onto their corresponding tiers so each tier owns its label, threshold and multiplier.
+- Migrate existing payroll-code labels onto the matching tiers without overwriting saved settings or historical time entries.
+- Expose travel tiers in Settings and persist their cost-code names and multipliers.
+
 ## [0.1.45] - 2026-11-17
 
 ### Changed

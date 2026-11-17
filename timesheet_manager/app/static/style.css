@@ -200,3 +200,10 @@
 #report-timesheet td:nth-child(7) .rate-line{white-space:nowrap;overflow-wrap:normal;word-break:normal}
 #report-timesheet th:nth-child(9),
 #report-timesheet td:nth-child(9){min-width:180px;max-width:300px}
+
+
+/* Financial-year overview detail switch */
+.annual-chart-head{align-items:flex-start;gap:12px;flex-wrap:wrap}
+.annual-chart-switch{display:flex;gap:5px;flex-shrink:0}
+.annual-chart-switch .small-btn{min-width:72px}
+.annual-chart-switch .small-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}

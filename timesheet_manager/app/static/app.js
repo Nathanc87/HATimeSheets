@@ -240,10 +240,18 @@ function renderShiftCalendar(rows,config,holidays){
  $("#shift-calendar-label").textContent=shiftCalendarMonthDate.toLocaleDateString(undefined,{month:"long",year:"numeric"});
  const first=new Date(y,m,1,12),offset=(first.getDay()+6)%7;
  const days=new Date(y,m+1,0).getDate(),today=new Date();today.setHours(12,0,0,0);
- const totals={};(rows||[]).forEach(s=>{
+ const totals={},dayDetails={};(rows||[]).forEach(s=>{
   const mins=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));
   const paid=s.is_travelling?Math.min(mins,600):mins;
   totals[s.work_date]=(totals[s.work_date]||0)+paid/60;
+  if(!dayDetails[s.work_date])dayDetails[s.work_date]={types:new Set(),projects:new Set()};
+  const detail=dayDetails[s.work_date];
+  if(s.is_public_holiday||s.leave_type==="public_holiday")detail.types.add("Public Holiday");
+  else if(s.leave_type==="annual_leave")detail.types.add("Annual Leave");
+  else if(s.leave_type==="sick_leave")detail.types.add("Sick Leave");
+  else if(s.is_overseas)detail.types.add("Work - Travel");
+  else if(s.project)detail.projects.add(String(s.project));
+  else detail.types.add("Work");
  });
  const schedule=config.normal_hours_schedule||[];
  const enabledDays=new Set(schedule.filter(x=>x.enabled).map(x=>Number(x.day)));
@@ -255,7 +263,17 @@ function renderShiftCalendar(rows,config,holidays){
   const d=new Date(y,m,day,12),key=dateText(d),dow=(d.getDay()+6)%7;
   const total=totals[key]||0,has=total>0,scheduled=enabledDays.has(dow)&&!holidayDates.has(key),missed=d<today&&scheduled&&!has;
   const classes=["calendar-day",has?"calendar-has-hours":"",missed?"calendar-missing":"",key===dateText(today)?"calendar-today":""].filter(Boolean).join(" ");
-  out+='<button type="button" class="'+classes+' calendar-day-button" data-date="'+key+'" onclick="openCalendarDate(\''+key+'\')" title="'+(missed?"Scheduled workday with no time entry":has?"Hours recorded — click to edit":"No hours recorded — click to add entry")+'"><span class="calendar-date">'+day+'</span><strong>'+(has?hours(total):"—")+'</strong></button>';
+  const detail=dayDetails[key];
+  let detailText="";
+  if(detail){
+   const special=["Public Holiday","Annual Leave","Sick Leave"].filter(x=>detail.types.has(x));
+   if(special.length)detailText=special.join(" / ");
+   else if(detail.types.has("Work - Travel"))detailText="Work - Travel";
+   else if(detail.projects.size)detailText=Array.from(detail.projects).join(", ");
+   else detailText="Work";
+  }
+  const safeDetail=detailText?'<span class="calendar-day-detail" title="'+esc(detailText)+'">'+esc(detailText)+'</span>':"";
+  out+='<button type="button" class="'+classes+' calendar-day-button" data-date="'+key+'" onclick="openCalendarDate(\\''+key+'\\')" title="'+(detailText?esc(detailText)+" — ":"")+(missed?"Scheduled workday with no time entry":has?"Hours recorded — click to edit":"No hours recorded — click to add entry")+'"><span class="calendar-date">'+day+'</span>'+safeDetail+'<strong>'+(has?hours(total):"—")+'</strong></button>';
  }
  const cells=offset+days;for(let i=cells;i<Math.ceil(cells/7)*7;i++)out+='<div class="calendar-day calendar-empty"></div>';
  root.innerHTML=out;

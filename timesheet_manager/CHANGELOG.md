@@ -1,3 +1,10 @@
+## [0.1.58] - 2026-11-17
+
+### Changed
+- Let the Reports table size the Hours by rate column automatically to fit the longest rate line.
+- Keep each rate breakdown on a single line; the report table can scroll horizontally when required.
+- Bump add-on and static asset versions to 0.1.58.
+
 ## [0.1.57] - 2026-11-17
 
 ### Fixed

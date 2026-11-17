@@ -37,7 +37,7 @@ class PayrollTests(unittest.TestCase):
                         {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x"},
                         {"after_hours": 40, "multiplier": 1.5, "label": "Overtime 1.5x"},
                         {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2.0x"}],
-                    "travel_loading": 0.3, "penalty_rules": []}
+                    "penalty_rules": []}
         shifts = [{"id": i, "work_date": "2026-11-"+str(16+i), "start_time": "00:00",
                    "finish_time": "10:00", "break_minutes": 0} for i in range(1, 6)]
         result = calculate(shifts, [], settings)
@@ -54,22 +54,24 @@ class PayrollTests(unittest.TestCase):
         settings = {"base_rate": 40, "week_start_day": 0,
                     "normal_hours_schedule": [{"day": 0, "enabled": True, "start_time": "05:30", "finish_time": "16:00"}],
                     "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
-                    "travel_loading": 0.3, "penalty_rules": []}
+                    "penalty_rules": []}
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "04:30",
                  "finish_time": "07:30", "break_minutes": 0}
         result = calculate([shift], [], settings)
         self.assertEqual([(x["category"], x["hours"], x["multiplier"]) for x in result["shifts"][0]["segments"]],
                          [("Out-of-hours", 1.0, 1.5), ("Ordinary", 2.0, 1.0)])
 
-    def test_overseas_loading_adds_point_three(self):
+    def test_overseas_uses_configured_travel_tier_multiplier(self):
         settings = {"base_rate": 40, "week_start_day": 0, "normal_hours_schedule": [],
                     "overtime_tiers": [{"after_hours": 0, "multiplier": 1.5, "label": "OT"}],
-                    "travel_loading": 0.3, "penalty_rules": []}
+                    "travel_rules": [{"after_hours": 0, "multiplier": 1.8, "label": "Travel overseas", "cost_code": "OVERSEAS"}],
+                    "penalty_rules": []}
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
                  "finish_time": "02:00", "break_minutes": 0, "is_overseas": True}
         result = calculate([shift], [], settings)
         self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Overseas")
         self.assertEqual(result["shifts"][0]["segments"][0]["multiplier"], 1.8)
+        self.assertEqual(result["shifts"][0]["segments"][0]["pay_code"], "OVERSEAS 1.8")
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 144)
 
     def test_sunday_penalty_replaces_normal_rate(self):
@@ -115,7 +117,10 @@ class PayrollTests(unittest.TestCase):
                     "normal_hours_schedule": [{"day": 0, "enabled": True, "start_time": "05:30", "finish_time": "16:00"}],
                     "overtime_tiers": [{"after_hours": 38, "multiplier": 1.5, "label": "OT1"},
                                        {"after_hours": 44, "multiplier": 2.0, "label": "OT2"}],
-                    "travel_loading": 0.3, "travel_rules": [], "penalty_rules": []}
+                    "travel_rules": [{"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
+                                     {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime 1"},
+                                     {"after_hours": 44, "multiplier": 2.3, "label": "Travel overtime 2"}],
+                    "penalty_rules": []}
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "20:00",
                  "finish_time": "06:30", "break_minutes": 30, "is_overseas": True, "notes": ""}
         result = calculate([shift], [], settings)
@@ -124,23 +129,29 @@ class PayrollTests(unittest.TestCase):
             {"category": "Overseas", "pay_code": "Travel-OTH Ordinary 1.3", "hours": 10.0, "multiplier": 1.3}])
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 520)
 
-    def test_overseas_daily_overtime_after_10_hours(self):
+    def test_overseas_daily_overtime_after_10_hours_uses_travel_overtime_tier(self):
         settings = {"base_rate": 40, "week_start_day": 0,
                     "normal_hours_schedule": [{"day": 0, "enabled": True, "start_time": "05:30", "finish_time": "16:00"}],
                     "overtime_tiers": [{"after_hours": 38, "multiplier": 1.5, "label": "OT1"},
                                        {"after_hours": 44, "multiplier": 2.0, "label": "OT2"}],
-                    "travel_loading": 0.3, "travel_rules": [], "penalty_rules": []}
+                    "travel_rules": [{"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
+                                     {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime"}],
+                    "penalty_rules": []}
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "20:00",
                  "finish_time": "07:00", "break_minutes": 0, "is_overseas": True, "notes": ""}
         result = calculate([shift], [], settings)
         self.assertEqual([(x["hours"], x["multiplier"]) for x in result["shifts"][0]["segments"]],
                          [(10.0, 1.3), (1.0, 1.8)])
 
-    def test_overseas_weekly_overtime_starts_after_38_hours(self):
+    def test_overseas_weekly_overtime_uses_travel_tiers(self):
         settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [
                         {"after_hours": 38, "multiplier": 1.5, "label": "OT1"},
                         {"after_hours": 44, "multiplier": 2.0, "label": "OT2"}],
-                    "travel_loading": 0.3, "travel_rules": [], "penalty_rules": []}
+                    "travel_rules": [
+                        {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
+                        {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime 1"},
+                        {"after_hours": 44, "multiplier": 2.3, "label": "Travel overtime 2"}],
+                    "penalty_rules": []}
         shifts = [{"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "20:00",
                    "finish_time": "06:00", "break_minutes": 0, "is_overseas": True}
                   for i in range(1, 5)]
@@ -293,7 +304,7 @@ class PayrollTests(unittest.TestCase):
                     "overtime_tiers": [
                         {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
                         {"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1.5x"}],
-                    "travel_loading": 0.3, "travel_rules": [], "penalty_rules": []}
+                    "travel_rules": [], "penalty_rules": []}
         shifts = [
             {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
              "finish_time": "01:00", "break_minutes": 0, "is_overseas": True},
@@ -359,13 +370,36 @@ class TierCostCodeTests(unittest.TestCase):
         self.assertEqual(final_segment["pay_code"], "CUSTOM-OT1")
         self.assertEqual(final_segment["multiplier"], 1.5)
 
+    def test_travelling_shift_uses_configured_travel_tier_multiplier_and_code(self):
+        settings = {
+            "base_rate": 40,
+            "week_start_day": 0,
+            "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
+            "travel_rules": [
+                {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary", "cost_code": "TRAVEL-REG"},
+                {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime", "cost_code": "TRAVEL-OT"},
+            ],
+            "penalty_rules": [],
+        }
+        shifts = [
+            {"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "05:30",
+             "finish_time": "16:00", "break_minutes": 30}
+            for i in range(1, 5)
+        ]
+        shifts.append({"id": 5, "work_date": "2026-11-20", "start_time": "05:30",
+                       "finish_time": "16:00", "break_minutes": 30, "is_travelling": True})
+        result = calculate(shifts, [], settings)
+        travel_segment = result["shifts"][-1]["segments"][0]
+        self.assertEqual(travel_segment["pay_code"], "TRAVEL-OT 1.8")
+        self.assertEqual(travel_segment["multiplier"], 1.8)
+        self.assertEqual(travel_segment["hours"], 10.0)
+
     def test_standalone_travel_cost_code_comes_from_the_reached_travel_tier(self):
         settings = {
             "base_rate": 40,
             "week_start_day": 0,
             "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
-            "travel_loading": 0.3,
-            "travel_rules": [
+                        "travel_rules": [
                 {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary", "cost_code": "TRAVEL-REG"},
                 {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime", "cost_code": "TRAVEL-OT"},
             ],
@@ -379,8 +413,8 @@ class TierCostCodeTests(unittest.TestCase):
         travel = [{"id": 1, "travel_date": "2026-11-20", "start_time": "06:00",
                    "finish_time": "07:00", "break_minutes": 0}]
         result = calculate(shifts, travel, settings)
-        self.assertEqual(result["travel"][0]["pay_code"], "TRAVEL-OT 2.1")
-        self.assertEqual(result["travel"][0]["multiplier"], 2.1)
+        self.assertEqual(result["travel"][0]["pay_code"], "TRAVEL-OT 1.8")
+        self.assertEqual(result["travel"][0]["multiplier"], 1.8)
 
 
 if __name__ == "__main__":

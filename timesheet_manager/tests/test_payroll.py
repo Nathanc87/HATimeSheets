@@ -69,7 +69,7 @@ class PayrollTests(unittest.TestCase):
         shift = {"id": 1, "work_date": "2026-11-16", "start_time": "00:00",
                  "finish_time": "02:00", "break_minutes": 0, "is_overseas": True}
         result = calculate([shift], [], settings)
-        self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Overseas")
+        self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Work - Travel")
         self.assertEqual(result["shifts"][0]["segments"][0]["multiplier"], 1.8)
         self.assertEqual(result["shifts"][0]["segments"][0]["pay_code"], "OVERSEAS 1.8")
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 144)
@@ -126,7 +126,7 @@ class PayrollTests(unittest.TestCase):
         result = calculate([shift], [], settings)
         self.assertEqual(result["total_work_hours"], 10)
         self.assertEqual(result["shifts"][0]["segments"], [
-            {"category": "Overseas", "pay_code": "Travel-OTH Ordinary 1.3", "hours": 10.0, "multiplier": 1.3}])
+            {"category": "Work - Travel", "pay_code": "Travel-OTH Ordinary 1.3", "hours": 10.0, "multiplier": 1.3}])
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 520)
 
     def test_overseas_daily_overtime_after_10_hours_uses_travel_overtime_tier(self):

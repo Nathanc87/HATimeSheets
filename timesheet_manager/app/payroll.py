@@ -55,7 +55,6 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
     penalties = [p for p in settings.get("penalty_rules", []) if p.get("enabled", True)]
     rate = settings.get("base_rate")
     schedule = settings.get("normal_hours_schedule")
-    loading = float(settings.get("travel_loading", 0.3))
     code_labels = {"ordinary_1_0":"Ordinary 1.0","ordinary_1_5":"Ordinary 1.5","overtime_1_5":"Overtime 1.5","overtime_2_0":"Overtime 2.0","public_holiday":"Public Holiday","travel_ordinary":"Travel-OTH Ordinary","travel_overtime":"Travel-OTH OT","annual_leave":"Annual Leave","sick_leave":"Sick Leave"}
     code_labels.update(settings.get("payroll_codes", {}) or {})
     def code(key): return str(code_labels.get(key) or key)
@@ -73,13 +72,16 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             return code("overtime_1_5")
         return str(tier.get("label", "Overtime"))
 
-    def travel_code_at(absolute_minutes, travel_kind, multiplier):
-        fallback = code("travel_overtime" if travel_kind == "OT" else "travel_ordinary")
-        selected = fallback
+    def travel_tier_at(absolute_minutes):
+        multiplier, label, cost_code = 1.3, "Travel ordinary", code("travel_ordinary")
         for travel_tier in travel_tiers:
             if absolute_minutes >= float(travel_tier.get("after_hours", 0)) * 60:
-                selected = travel_tier.get("cost_code") or fallback
-        return f"{selected} {multiplier:.1f}"
+                multiplier = float(travel_tier.get("multiplier", 1.3))
+                label = travel_tier.get("label", "Travel")
+                is_overtime = "overtime" in str(label).lower() or str(label).lower().startswith("ot")
+                fallback = code("travel_overtime" if is_overtime else "travel_ordinary")
+                cost_code = travel_tier.get("cost_code") or fallback
+        return multiplier, label, cost_code
 
     result, normalized, by_week = [], [], {}
 
@@ -129,11 +131,10 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             leave_label = code("annual_leave") if s.get("leave_type") == "annual_leave" else code("sick_leave")
             segments = [{"category": leave_label, "pay_code": leave_label, "hours": 10.0, "multiplier": 1.0}]
         elif travelling:
-            base, tier_label, tier_cost_code = tier_at(earlier)
+            travel_multiplier, travel_label, travel_cost_code = travel_tier_at(earlier)
             if payable_minutes:
-                travel_kind = "OT" if "overtime" in str(tier_label).lower() or str(tier_label).lower().startswith("ot") else "Ordinary"
-                segments = [{"category": "Travel", "pay_code": travel_code_at(earlier, travel_kind, base + loading),
-                             "hours": round(payable_minutes / 60, 4), "multiplier": base + loading}]
+                segments = [{"category": "Travel", "pay_code": f"{travel_cost_code} {travel_multiplier:.1f}",
+                             "hours": round(payable_minutes / 60, 4), "multiplier": travel_multiplier}]
         else:
             # The entry model stores break duration, not its timestamp; deduct it at shift end.
             start_dt = datetime.combine(d, datetime.strptime(s["start_time"], "%H:%M").time())
@@ -153,11 +154,10 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                 category = ("Overseas" if overseas else
                             "Travel" if s.get("is_travelling") else
                             "Out-of-hours" if outside and base < 1.5 else label)
-                if s.get("is_travelling") or s.get("is_overseas"):
-                    multiplier += loading
                 if overseas:
-                    travel_kind = "OT" if daily_overtime or "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
-                    pay_code = travel_code_at(earlier + cursor, travel_kind, multiplier)
+                    travel_multiplier, travel_label, travel_cost_code = travel_tier_at(earlier + cursor)
+                    multiplier = max(travel_multiplier, 1.5 if daily_overtime else 1.0)
+                    pay_code = f"{travel_cost_code} {multiplier:.1f}"
                 elif category == "Out-of-hours":
                     first_overtime = next((tier for tier in tiers if float(tier.get("multiplier", 1)) >= 1.49), None)
                     pay_code = (first_overtime.get("cost_code") or default_overtime_code(first_overtime)) if first_overtime else code("ordinary_1_5")
@@ -212,14 +212,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                              for x in travel if x["travel_date"] < t["travel_date"] and
                              weekly_bucket_start(date.fromisoformat(x["travel_date"]), week_start).isoformat() == key)
         position = max(0, work_before - mins + earlier_travel)
-        multiplier, label = 1.0 + loading, "Travel ordinary"
-        travel_cost_code = code("travel_ordinary")
-        for tier in travel_tiers:
-            if position >= float(tier.get("after_hours", 0)) * 60:
-                multiplier, label = float(tier.get("multiplier", 1)) + loading, tier.get("label", "Travel")
-                fallback = code("travel_overtime" if "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "travel_ordinary")
-                travel_cost_code = tier.get("cost_code") or fallback
-        travel_kind = "OT" if "overtime" in str(label).lower() or str(label).lower().startswith("ot") else "Ordinary"
+        multiplier, label, travel_cost_code = travel_tier_at(position)
         pay_code = f"{travel_cost_code} {multiplier:.1f}"
         earnings = None if rate in (None, "") else round((mins / 60) * float(rate) * multiplier, 2)
         travel_result.append({"id": t["id"], "date": d.isoformat(), "hours": round(mins / 60, 4),

@@ -1,3 +1,12 @@
+## [0.1.47] - 2026-11-17
+
+### Changed
+- Add a dedicated Projects page under Settings, separate from Data & General.
+- Remove the separate Travel & Overseas Additional Multiplier setting; travel tier multipliers now define the complete rates for travel and overseas work.
+- Apply configured travel tier thresholds, multipliers and cost-code names consistently to travelling entries, separate travel entries and overseas work.
+- Retain the 10-hour paid cap for travelling entries and the 1.5× minimum for overseas hours after the first 10 paid hours.
+- Ignore and remove the legacy additive loading value when loading existing settings, without changing saved project names or time entries.
+
 ## [0.1.46] - 2026-11-17
 
 ### Changed

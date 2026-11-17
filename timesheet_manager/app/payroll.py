@@ -185,8 +185,8 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             additions = [x for x in applicable if x.get("mode") == "add"]
             if replacements:
                 chosen = max(replacements, key=lambda x: float(x.get("multiplier", 1)))
-                code = "Public Holiday" if any(x.get("condition") == "public_holiday" for x in replacements) else str(chosen["name"])
-                segments = [{"category": chosen["name"], "pay_code": code, "hours": round(mins / 60, 4),
+                holiday_pay_code = "Public Holiday" if any(x.get("condition") == "public_holiday" for x in replacements) else str(chosen["name"])
+                segments = [{"category": chosen["name"], "pay_code": holiday_pay_code, "hours": round(mins / 60, 4),
                              "multiplier": float(chosen.get("multiplier", 1))}]
             for rule in additions:
                 segments.append({"category": rule["name"] + " (additional)",

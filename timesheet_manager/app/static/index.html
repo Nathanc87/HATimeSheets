@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.50">
+<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.51">
 </head>
 <body>
 <aside class="sidebar">
@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.50</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.51</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -49,7 +49,7 @@
       <div class="entry-options">
         <input type="hidden" name="is_public_holiday" value="false">
         <input type="hidden" name="is_overseas" value="false">
-        <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">Paid using configured travel tiers, maximum 10 hours; excluded from weekly overtime</small></label>
+        <label class="check"><input name="is_travelling" type="checkbox"> Travelling <small class="hint">(Travelling is 10hrs max per day with no penalties included)</small></label>
       </div>
       <div class="actions"><button class="primary" id="entry-save">Save time entry</button><button type="button" class="secondary" onclick="cancelEntry()">Cancel</button></div>
     </form>
@@ -148,5 +148,5 @@
 </section>
 <div id="toast" role="status"></div>
 </main>
-<script src="static/app.js?v=0.1.50"></script>
+<script src="static/app.js?v=0.1.51"></script>
 </body></html>

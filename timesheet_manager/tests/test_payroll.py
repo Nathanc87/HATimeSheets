@@ -333,5 +333,55 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["shifts"][0]["segments"][0]["pay_code"], "Sick Leave")
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 400)
 
+
+class TierCostCodeTests(unittest.TestCase):
+    def test_overtime_cost_code_comes_from_the_reached_overtime_tier(self):
+        settings = {
+            "base_rate": 40,
+            "week_start_day": 0,
+            "overtime_tiers": [
+                {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary", "cost_code": "REG"},
+                {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x", "cost_code": "CUSTOM-OT1"},
+                {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2.0x", "cost_code": "CUSTOM-OT2"},
+            ],
+            "travel_rules": [],
+            "penalty_rules": [],
+        }
+        shifts = [
+            {"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "05:30",
+             "finish_time": "16:00", "break_minutes": 30}
+            for i in range(1, 5)
+        ]
+        shifts.append({"id": 5, "work_date": "2026-11-20", "start_time": "05:30",
+                       "finish_time": "06:30", "break_minutes": 0})
+        result = calculate(shifts, [], settings)
+        final_segment = result["shifts"][-1]["segments"][0]
+        self.assertEqual(final_segment["pay_code"], "CUSTOM-OT1")
+        self.assertEqual(final_segment["multiplier"], 1.5)
+
+    def test_standalone_travel_cost_code_comes_from_the_reached_travel_tier(self):
+        settings = {
+            "base_rate": 40,
+            "week_start_day": 0,
+            "overtime_tiers": [{"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"}],
+            "travel_loading": 0.3,
+            "travel_rules": [
+                {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary", "cost_code": "TRAVEL-REG"},
+                {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime", "cost_code": "TRAVEL-OT"},
+            ],
+            "penalty_rules": [],
+        }
+        shifts = [
+            {"id": i, "work_date": f"2026-11-{15+i:02d}", "start_time": "05:30",
+             "finish_time": "16:00", "break_minutes": 30}
+            for i in range(1, 5)
+        ]
+        travel = [{"id": 1, "travel_date": "2026-11-20", "start_time": "06:00",
+                   "finish_time": "07:00", "break_minutes": 0}]
+        result = calculate(shifts, travel, settings)
+        self.assertEqual(result["travel"][0]["pay_code"], "TRAVEL-OT 2.1")
+        self.assertEqual(result["travel"][0]["multiplier"], 2.1)
+
+
 if __name__ == "__main__":
     unittest.main()

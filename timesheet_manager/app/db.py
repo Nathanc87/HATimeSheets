@@ -34,14 +34,14 @@ DEFAULT_SETTINGS = {
     "public_holiday_credit_counts_toward_overtime": None,
     "overtime_tiers": [
         {"after_hours": 0, "multiplier": 1.0, "label": "Ordinary"},
-        {"after_hours": 38, "multiplier": 1.5, "label": "Ordinary 1.5x"},
-        {"after_hours": 40, "multiplier": 1.5, "label": "Overtime 1.5x"},
-        {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2.0x"}
+        {"after_hours": 38, "multiplier": 1.5, "label": "Ord 1.5", "cost_code": "Ordinary 1.5"},
+        {"after_hours": 40, "multiplier": 1.5, "label": "OT 1.5", "cost_code": "Overtime 1.5"},
+        {"after_hours": 44, "multiplier": 2.0, "label": "OT 2.0", "cost_code": "Overtime 2.0"}
     ],
     "travel_rules": [
-        {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"},
-        {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime 1"},
-        {"after_hours": 44, "multiplier": 2.3, "label": "Travel overtime 2"}
+        {"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary", "cost_code": "Travel-OTH Ordinary"},
+        {"after_hours": 38, "multiplier": 1.8, "label": "Travel overtime 1.5", "cost_code": "Travel-OTH OT 1.8"},
+        {"after_hours": 44, "multiplier": 2.3, "label": "Travel overtime 2.0", "cost_code": "Travel-OTH OT 2.3"}
     ],
     "penalty_rules": [
         {"name": "Sunday", "enabled": True, "condition": "day_of_week", "day": 6,
@@ -141,6 +141,27 @@ def get_settings(db):
     legacy_tiers = [{"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"}, {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}]
     if stored.get("overtime_tiers") == legacy_tiers:
         merged["overtime_tiers"] = DEFAULT_SETTINGS["overtime_tiers"]
+
+    # Update only the original built-in tier descriptions to the current defaults.
+    # Custom descriptions and all user-defined thresholds/rates are preserved.
+    default_overtime_labels = {
+        (38, 1.5): {"Ordinary 1.5x": "Ord 1.5"},
+        (40, 1.5): {"Overtime 1.5x": "OT 1.5"},
+        (44, 2.0): {"Overtime 2.0x": "OT 2.0"},
+    }
+    for tier in merged.get("overtime_tiers", []):
+        key = (int(float(tier.get("after_hours", 0))), float(tier.get("multiplier", 1)))
+        replacement = default_overtime_labels.get(key, {}).get(tier.get("label"))
+        if replacement:
+            tier["label"] = replacement
+    default_travel_labels = {
+        (38, 1.8, "Travel overtime 1"): "Travel overtime 1.5",
+        (44, 2.3, "Travel overtime 2"): "Travel overtime 2.0",
+    }
+    for tier in merged.get("travel_rules", []):
+        key = (int(float(tier.get("after_hours", 0))), float(tier.get("multiplier", 1)), tier.get("label"))
+        if key in default_travel_labels:
+            tier["label"] = default_travel_labels[key]
 
     # Migrate legacy standalone payroll-code labels onto their matching tiers.
     # This is an in-memory compatibility migration: existing settings and timesheets

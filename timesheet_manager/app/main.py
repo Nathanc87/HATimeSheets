@@ -2,7 +2,7 @@ import csv
 import asyncio
 import io
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -504,3 +504,63 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 @app.get("/api/health")
 def health():
     return {"status":"ok","application":"HATimeSheets","version":"0.1.53"}
+
+@app.get("/api/eofy-estimate")
+def eofy_estimate():
+    """Project FY gross using only the remaining configured normal roster."""
+    today = date.today()
+    fy_start_year = today.year if today.month >= 7 else today.year - 1
+    fy_start = date(fy_start_year, 7, 1)
+    fy_end = date(fy_start_year + 1, 6, 30)
+    actual_end = min(today, fy_end)
+    actual, settings, _, _ = report_data(fy_start.isoformat(), actual_end.isoformat())
+
+    schedule = settings.get("normal_hours_schedule") or []
+    holiday_dates = []
+    with connect() as db:
+        holiday_dates = [r["holiday_date"] for r in db.execute(
+            "SELECT holiday_date FROM holidays WHERE holiday_date BETWEEN ? AND ?",
+            (today.isoformat(), fy_end.isoformat())).fetchall()]
+
+    projected_shifts = []
+    shift_id = -1
+    day = today + timedelta(days=1)
+    while day <= fy_end:
+        rule = next((item for item in schedule
+                     if int(item.get("day", -1)) == day.weekday()
+                     and item.get("enabled", False)), None)
+        if rule:
+            projected_shifts.append({
+                "id": shift_id,
+                "work_date": day.isoformat(),
+                "start_time": rule.get("start_time", "08:00"),
+                "finish_time": rule.get("finish_time", "16:00"),
+                "break_minutes": int(rule.get("break_minutes", 30) if rule.get("break_minutes") is not None else 30),
+                "notes": "",
+                "is_public_holiday": day.isoformat() in holiday_dates,
+                "is_travelling": False,
+                "is_overseas": False,
+                "leave_type": "work",
+            })
+            shift_id -= 1
+        day += timedelta(days=1)
+
+    projected = calculate(projected_shifts, [], settings, holiday_dates, [])
+    actual_gross = actual.get("estimated_gross")
+    projected_gross = projected.get("estimated_gross")
+    eofy_gross = (round(float(actual_gross or 0) + float(projected_gross or 0), 2)
+                  if actual_gross is not None and projected_gross is not None else None)
+    return {
+        "financial_year": f"{fy_start_year}-{str(fy_start_year + 1)[-2:]}",
+        "from_date": (today + timedelta(days=1)).isoformat(),
+        "to_date": fy_end.isoformat(),
+        "actual_gross": actual_gross,
+        "actual_allowances": actual.get("total_allowances", 0),
+        "projected_gross": projected_gross,
+        "projected_allowances": projected.get("total_allowances", 0),
+        "estimated_eofy_gross": eofy_gross,
+        "scheduled_days": len(projected_shifts),
+        "projected_hours": projected.get("total_work_hours", 0),
+        "base_rate_configured": bool(actual.get("base_rate_configured")) and bool(projected.get("base_rate_configured")),
+        "allowance_details": projected.get("allowances", []),
+    }

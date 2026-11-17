@@ -108,7 +108,7 @@ function shiftReportWeek(amount){
  $("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport();
 }
 function shiftDashboardWeek(amount){if(!dashboardWeekStart)return;dashboardWeekStart.setDate(dashboardWeekStart.getDate()+amount*7);loadDashboard()}
-async function loadDashboard(){try{settings=await api("api/settings");initialiseSelectedChartDates();const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
+async function loadDashboard(){try{settings=await api("api/settings");initialiseSelectedChartDates();const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadEofyEstimate();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
 let annualChartMode="basic";
 function setAnnualChartMode(mode){
  annualChartMode=mode==="detailed"?"detailed":"basic";
@@ -172,6 +172,19 @@ async function loadYearEarningsChart(){
  try{const r=await api("api/report?start="+p.start+"&end="+p.end);$("#year-earnings-chart").innerHTML=earningsChartHtml(r,annualChartMode)}
  catch(e){$("#year-earnings-chart").innerHTML='<div class="empty">Could not load earnings.</div>'}
 }
+
+async function loadEofyEstimate(){
+ const target=$("#eofy-estimate");if(!target)return;
+ try{
+  const r=await api("api/eofy-estimate");
+  if(!r.base_rate_configured){
+   target.innerHTML='<div class="empty">Set your current hourly rate in Settings to calculate the EOFY estimate.</div>';return;
+  }
+  const allowanceRows=(r.allowance_details||[]).map(x=>'<div class="eofy-row"><span>'+esc(x.name)+'</span><b>'+money(x.amount)+'</b></div>').join("");
+  target.innerHTML='<div class="eofy-summary"><div><small>Actual gross YTD</small><b>'+money(r.actual_gross)+'</b></div><div><small>Projected remaining</small><b>'+money(r.projected_gross)+'</b></div><div class="eofy-total"><small>Estimated EOFY gross</small><b>'+money(r.estimated_eofy_gross)+'</b></div></div><div class="eofy-meta">'+Number(r.scheduled_days||0)+' scheduled workdays · '+hours(r.projected_hours)+' projected hours remaining</div><div class="eofy-allowances"><strong>Projected allowances</strong>'+ (allowanceRows||'<div class="eofy-row"><span>No configured allowances</span><b>'+money(0)+'</b></div>')+'</div><p class="eofy-note">Based on your remaining normal roster and current payroll settings. Overtime is only applied where your configured weekly tiers are reached by normal scheduled hours.</p>';
+ }catch(e){target.innerHTML='<div class="empty">Could not calculate EOFY estimate: '+esc(e.message)+'</div>'}
+}
+
 async function loadSelectedEarningsChart(){
  const start=$("#dashboard-chart-start").value,end=$("#dashboard-chart-end").value;
  if(!start||!end||start>end){$("#selected-earnings-chart").innerHTML='<div class="empty">Choose a valid date range.</div>';return}

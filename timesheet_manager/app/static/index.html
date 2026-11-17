@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.59">
+<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.62">
 </head>
 <body>
 <aside class="sidebar">
@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.59</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.62</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="header-actions"><button type="button" id="privacy-toggle" class="privacy-toggle" onclick="togglePrivacyMode()" aria-pressed="true" title="Show pay figures">◉ Privacy on</button><div class="today" id="today"></div></div></header>
@@ -30,7 +30,7 @@
     <article class="stat"><span>Estimated take-home</span><strong id="take-home">Not configured</strong><small id="take-home-note">Based on weekly PAYG withholding</small></article>
   </div>
   <div class="grid-two dashboard-charts">
-  <article class="panel"><div class="panel-head annual-chart-head"><div><h2>Financial year overview</h2><p id="annual-chart-description">Basic breakdown by time-entry type</p></div><div class="annual-chart-switch" role="group" aria-label="Annual overview detail"><button type="button" class="small-btn active" data-annual-chart-mode="basic" aria-pressed="true" onclick="setAnnualChartMode('basic')">Basic</button><button type="button" class="small-btn" data-annual-chart-mode="detailed" aria-pressed="false" onclick="setAnnualChartMode('detailed')">Detailed</button></div></div><div id="year-earnings-chart" class="earnings-chart"></div></article>
+  <article class="panel"><div class="panel-head annual-chart-head"><div><h2>Financial year overview</h2><p id="annual-chart-description">Basic breakdown by time-entry type</p></div><div class="annual-chart-switch" role="group" aria-label="Annual overview detail"><button type="button" class="small-btn active" data-annual-chart-mode="basic" aria-pressed="true" onclick="setAnnualChartMode('basic')">Basic</button><button type="button" class="small-btn" data-annual-chart-mode="detailed" aria-pressed="false" onclick="setAnnualChartMode('detailed')">Detailed</button></div></div><div id="year-earnings-chart" class="earnings-chart"></div><div class="eofy-panel"><h3>Estimated EOFY</h3><p>Actual earnings plus your remaining normal roster</p><div id="eofy-estimate"><div class="empty">Calculating estimate…</div></div></div></article>
   <article class="panel"><div class="panel-head"><div><h2>Selected dates</h2><p>Estimated dollars by pay rate and allowances</p></div></div><div class="date-range-picker"><label>From<input id="dashboard-chart-start" type="date"></label><label>To<input id="dashboard-chart-end" type="date"></label><button class="small-btn" type="button" onclick="loadSelectedEarningsChart()">Apply dates</button></div><div id="selected-earnings-chart" class="earnings-chart"></div></article>
 </div>
 </section>

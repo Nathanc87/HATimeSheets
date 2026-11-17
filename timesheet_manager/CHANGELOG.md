@@ -1,3 +1,11 @@
+## [0.1.62] - 2026-11-17
+
+### Added
+- Add an Estimated EOFY gross projection to the Financial Year overview.
+- Project only future enabled roster days through 30 June using the configured shift times, breaks, pay-rate history, overtime tiers, penalties and allowances.
+- Show actual gross YTD, projected remaining gross, projected allowances, rostered days and hours, and estimated EOFY gross.
+- Keep all existing entries, settings and database records unchanged.
+
 ## [0.1.61] - 2026-11-17
 
 ### Changed

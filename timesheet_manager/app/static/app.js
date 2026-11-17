@@ -273,7 +273,7 @@ function renderShiftCalendar(rows,config,holidays){
    else detailText="Work";
   }
   const safeDetail=detailText?'<span class="calendar-day-detail" title="'+esc(detailText)+'">'+esc(detailText)+'</span>':"";
-  out+='<button type="button" class="'+classes+' calendar-day-button" data-date="'+key+'" onclick="openCalendarDate(\\''+key+'\\')" title="'+(detailText?esc(detailText)+" — ":"")+(missed?"Scheduled workday with no time entry":has?"Hours recorded — click to edit":"No hours recorded — click to add entry")+'"><span class="calendar-date">'+day+'</span>'+safeDetail+'<strong>'+(has?hours(total):"—")+'</strong></button>';
+  out+='<button type="button" class="'+classes+' calendar-day-button" data-date="'+key+'" onclick="openCalendarDate(&quot;'+key+'&quot;)" title="'+(detailText?esc(detailText)+" — ":"")+(missed?"Scheduled workday with no time entry":has?"Hours recorded — click to edit":"No hours recorded — click to add entry")+'"><span class="calendar-date">'+day+'</span>'+safeDetail+'<strong>'+(has?hours(total):"—")+'</strong></button>';
  }
  const cells=offset+days;for(let i=cells;i<Math.ceil(cells/7)*7;i++)out+='<div class="calendar-day calendar-empty"></div>';
  root.innerHTML=out;

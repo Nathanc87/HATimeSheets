@@ -1,3 +1,9 @@
+## [0.1.50] - 2026-11-17
+
+### Changed
+- Rename the Overseas entry type to Work - Travel in the time-entry selector and payroll category descriptions while retaining the existing stored overseas flag and travel-tier calculations.
+- Round saved shift clock-in times up to the next 15-minute interval and clock-out times down to the previous 15-minute interval. The API applies rounding on both create and edit so payroll and reports use the rounded times.
+
 ## [0.1.49] - 2026-11-17
 
 ### Changed

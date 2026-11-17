@@ -128,27 +128,40 @@ def shifts_get(start: str | None = None, end: str | None = None):
         sql += " ORDER BY work_date DESC, start_time DESC"
         return [dict(r) for r in db.execute(sql, params).fetchall()]
 
+def round_shift_times(start_time: str, finish_time: str):
+    """Round clock-in up and clock-out down to 15-minute boundaries."""
+    start = datetime.strptime(start_time, "%H:%M")
+    finish = datetime.strptime(finish_time, "%H:%M")
+    start_minutes = start.hour * 60 + start.minute
+    finish_minutes = finish.hour * 60 + finish.minute
+    rounded_start = min(((start_minutes + 14) // 15) * 15, 23 * 60 + 45)
+    rounded_finish = (finish_minutes // 15) * 15
+    return f"{rounded_start // 60:02d}:{rounded_start % 60:02d}", f"{rounded_finish // 60:02d}:{rounded_finish % 60:02d}"
+
+
 @app.post("/api/shifts")
 def shifts_post(item: ShiftIn):
     try:
         date.fromisoformat(item.work_date)
     except ValueError:
         raise HTTPException(400, "Invalid date")
+    rounded_start, rounded_finish = round_shift_times(item.start_time, item.finish_time)
     now = now_iso()
     with connect() as db:
         cur = db.execute("""INSERT INTO shifts
           (work_date,start_time,finish_time,break_minutes,notes,is_public_holiday,is_travelling,is_overseas,leave_type,project,created_at,updated_at)
           VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
-          (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
+          (item.work_date,rounded_start,rounded_finish,item.break_minutes,item.notes,
            int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,item.project,now,now))
         return {"id": cur.lastrowid}
 
 @app.put("/api/shifts/{shift_id}")
 def shifts_put(shift_id: int, item: ShiftIn):
+    rounded_start, rounded_finish = round_shift_times(item.start_time, item.finish_time)
     with connect() as db:
         cur = db.execute("""UPDATE shifts SET work_date=?,start_time=?,finish_time=?,
           break_minutes=?,notes=?,is_public_holiday=?,is_travelling=?,is_overseas=?,leave_type=?,project=?,updated_at=? WHERE id=?""",
-          (item.work_date,item.start_time,item.finish_time,item.break_minutes,item.notes,
+          (item.work_date,rounded_start,rounded_finish,item.break_minutes,item.notes,
            int(item.is_public_holiday),int(item.is_travelling),int(item.is_overseas),item.leave_type,item.project,now_iso(),shift_id))
         if not cur.rowcount:
             raise HTTPException(404, "Shift not found")

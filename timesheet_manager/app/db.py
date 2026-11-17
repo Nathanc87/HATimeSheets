@@ -163,6 +163,17 @@ def get_settings(db):
         if key in default_travel_labels:
             tier["label"] = default_travel_labels[key]
 
+    # Bring the original built-in travel cost-code names up to date without
+    # replacing any custom names.
+    for tier in merged.get("travel_rules", []):
+        after = int(float(tier.get("after_hours", 0) or 0))
+        multiplier = float(tier.get("multiplier", 1) or 1)
+        old_code = tier.get("cost_code")
+        if after == 38 and multiplier == 1.8 and old_code == "Travel-OTH OT":
+            tier["cost_code"] = "Travel-OTH OT 1.8"
+        elif after == 44 and multiplier == 2.3 and old_code == "Travel-OTH OT":
+            tier["cost_code"] = "Travel-OTH OT 2.3"
+
     # Migrate legacy standalone payroll-code labels onto their matching tiers.
     # This is an in-memory compatibility migration: existing settings and timesheets
     # remain intact, and the new fields are persisted the next time settings are saved.

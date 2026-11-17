@@ -535,7 +535,7 @@ def eofy_estimate():
                 "work_date": day.isoformat(),
                 "start_time": rule.get("start_time", "08:00"),
                 "finish_time": rule.get("finish_time", "16:00"),
-                "break_minutes": int(rule.get("break_minutes", 30) or 0),
+                "break_minutes": int(rule.get("break_minutes", 30) if rule.get("break_minutes") is not None else 30),
                 "notes": "",
                 "is_public_holiday": day.isoformat() in holiday_dates,
                 "is_travelling": False,

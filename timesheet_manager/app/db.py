@@ -140,6 +140,42 @@ def get_settings(db):
     legacy_tiers = [{"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"}, {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}]
     if stored.get("overtime_tiers") == legacy_tiers:
         merged["overtime_tiers"] = DEFAULT_SETTINGS["overtime_tiers"]
+
+    # Migrate legacy standalone payroll-code labels onto their matching tiers.
+    # This is an in-memory compatibility migration: existing settings and timesheets
+    # remain intact, and the new fields are persisted the next time settings are saved.
+    codes = dict(DEFAULT_SETTINGS.get("payroll_codes", {}))
+    codes.update(stored.get("payroll_codes", {}) or {})
+    overtime_tiers = []
+    for tier in merged.get("overtime_tiers", []):
+        item = dict(tier)
+        if not item.get("cost_code"):
+            after = float(item.get("after_hours", 0) or 0)
+            multiplier = float(item.get("multiplier", 1) or 1)
+            if after <= 0:
+                item["cost_code"] = codes.get("ordinary_1_0", "Ordinary 1.0")
+            elif multiplier >= 1.99:
+                item["cost_code"] = codes.get("overtime_2_0", "Overtime 2.0")
+            elif after <= 38:
+                item["cost_code"] = codes.get("ordinary_1_5", "Ordinary 1.5")
+            elif multiplier >= 1.49:
+                item["cost_code"] = codes.get("overtime_1_5", "Overtime 1.5")
+            else:
+                item["cost_code"] = item.get("label", "Overtime")
+        overtime_tiers.append(item)
+    merged["overtime_tiers"] = overtime_tiers
+
+    travel_tiers = []
+    for tier in merged.get("travel_rules", []):
+        item = dict(tier)
+        if not item.get("cost_code"):
+            after = float(item.get("after_hours", 0) or 0)
+            label = str(item.get("label", "")).lower()
+            is_overtime = after > 0 or "overtime" in label or label.startswith("ot")
+            item["cost_code"] = codes.get("travel_overtime" if is_overtime else "travel_ordinary",
+                                          "Travel-OTH OT" if is_overtime else "Travel-OTH Ordinary")
+        travel_tiers.append(item)
+    merged["travel_rules"] = travel_tiers
     return merged
 
 def save_settings(db, settings):

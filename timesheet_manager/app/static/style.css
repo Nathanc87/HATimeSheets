@@ -189,3 +189,14 @@
 .privacy-mode #pay-rate-history input[data-key="rate"]{-webkit-text-security:disc}
 .privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-inner-spin-button,.privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 @media(max-width:700px){.header-actions{gap:8px;flex-direction:column;align-items:flex-end}.privacy-toggle{padding:6px 9px}}
+
+
+/* Report Hours by rate column: size to its longest rate line rather than
+   wrapping each rate across multiple lines. The report wrapper scrolls when
+   the content needs more horizontal space. */
+#report-timesheet table{table-layout:auto}
+#report-timesheet th:nth-child(7),
+#report-timesheet td:nth-child(7){width:max-content;min-width:190px;white-space:nowrap}
+#report-timesheet td:nth-child(7) .rate-line{white-space:nowrap;overflow-wrap:normal;word-break:normal}
+#report-timesheet th:nth-child(9),
+#report-timesheet td:nth-child(9){min-width:180px;max-width:300px}

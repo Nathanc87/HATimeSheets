@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.51">
+<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.52">
 </head>
 <body>
 <aside class="sidebar">
@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.51</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.52</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -83,8 +83,11 @@
         <div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
       </div>
       <div class="settings-panel active" data-settings-panel="general">
-        <h3>Base pay</h3>
-        <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
+        <h3>Pay rate history</h3>
+        <p class="hint">Add each pay rate with the date it becomes effective. Shifts and travel entries use the rate that applied on their date, including historical reports.</p>
+        <div id="pay-rate-history"></div>
+        <button type="button" class="secondary" onclick="addPayRate()">+ Add pay rate</button>
+        <div class="form-row"><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
         <h3>Pay cycle</h3>
         <div class="form-row"><label>Cycle type<select name="pay_cycle_type"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom days</option></select></label><label>Cycle anchor / first day<input name="pay_cycle_start_date" type="date"></label></div>
         <div class="form-row"><label>Custom cycle length (days)<input name="custom_cycle_days" type="number" min="1" value="14"></label><label>Overtime week starts<select name="week_start_day"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></label></div>
@@ -148,5 +151,5 @@
 </section>
 <div id="toast" role="status"></div>
 </main>
-<script src="static/app.js?v=0.1.51"></script>
+<script src="static/app.js?v=0.1.52"></script>
 </body></html>

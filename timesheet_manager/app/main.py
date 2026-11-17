@@ -89,12 +89,27 @@ def settings_put(payload: dict):
     with connect() as db:
         current = get_settings(db)
         current.update(payload)
-        if current.get("base_rate") in ("", None):
-            current["base_rate"] = None
-        else:
-            current["base_rate"] = float(current["base_rate"])
-            if current["base_rate"] < 0:
-                raise HTTPException(400, "Base rate cannot be negative")
+        normalized = []
+        seen_dates = set()
+        for item in current.get("pay_rate_history", []):
+            effective_from = str(item.get("effective_from", "")).strip()
+            value = item.get("rate")
+            if not effective_from:
+                raise HTTPException(400, "Every pay rate needs an effective date")
+            try:
+                date.fromisoformat(effective_from)
+            except ValueError:
+                raise HTTPException(400, "Pay rate effective dates must be valid dates")
+            if effective_from in seen_dates:
+                raise HTTPException(400, "Pay rate effective dates must be unique")
+            seen_dates.add(effective_from)
+            rate_value = None if value in ("", None) else float(value)
+            if rate_value is not None and rate_value < 0:
+                raise HTTPException(400, "Pay rate cannot be negative")
+            normalized.append({"effective_from": effective_from, "rate": rate_value})
+        normalized.sort(key=lambda x: x["effective_from"])
+        current["pay_rate_history"] = normalized
+        current["base_rate"] = next((x["rate"] for x in reversed(normalized) if x["effective_from"] <= date.today().isoformat()), None)
         save_settings(db, current)
         return current
 

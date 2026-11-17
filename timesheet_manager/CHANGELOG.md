@@ -1,3 +1,11 @@
+## [0.1.52] - 2026-11-17
+
+### Changed
+- Replace the single base hourly rate with an editable pay-rate history using effective dates, initially dated 1 July 2026.
+- Apply the rate effective on each shift/travel entry date when calculating earnings, preserving historical rates after future pay rises.
+- Migrate an existing configured base rate to the 1 July 2026 entry; if no rate was configured, leave it blank.
+- Keep pay-rate effective dates editable and validate dates/rates when settings are saved.
+
 ## [0.1.51] - 2026-11-17
 
 ### Changed

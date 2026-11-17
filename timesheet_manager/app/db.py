@@ -8,6 +8,7 @@ DB_PATH = os.environ.get("TIMESHEETS_DB", "/data/timesheets.db")
 
 DEFAULT_SETTINGS = {
     "base_rate": None,
+    "pay_rate_history": [{"effective_from": "2026-07-01", "rate": None}],
     "presence_entity": "",
     "work_zone_entities": [],
     "presence_grace_minutes": 30,
@@ -136,6 +137,11 @@ def get_settings(db):
     stored = json.loads(row["payload"])
     merged = DEFAULT_SETTINGS.copy()
     merged.update(stored)
+    # Migrate a legacy single base rate to an editable effective-dated history.
+    if not stored.get("pay_rate_history"):
+        merged["pay_rate_history"] = [{"effective_from": "2026-07-01", "rate": stored.get("base_rate")}]
+    else:
+        merged["pay_rate_history"] = stored["pay_rate_history"]
     # Remove the legacy additive travel/overseas loading; travel tier multipliers are now authoritative.
     merged.pop("travel_loading", None)
     legacy_tiers = [{"after_hours": 38, "multiplier": 1.5, "label": "Overtime 1"}, {"after_hours": 44, "multiplier": 2.0, "label": "Overtime 2"}]

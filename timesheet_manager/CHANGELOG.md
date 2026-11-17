@@ -1,3 +1,9 @@
+## [0.1.48] - 2026-11-17
+
+### Fixed
+- Correct the Settings page markup so Projects, Working Hours, Pay & Overtime, Travel & Overseas, and Public Holidays are sibling panels rather than nested inside Data & General.
+- Restore each settings group's controls when its navigation tab is selected.
+
 ## [0.1.47] - 2026-11-17
 
 ### Changed

@@ -1,3 +1,12 @@
+## [0.1.53] - 2026-11-17
+
+### Changed
+- Reformat Excel export into a single Pay Summary worksheet with Earnings first and Allowances underneath.
+- Use payslip-style columns for Description, Dates, Hours/Units, Rate, Amount, YTD Hours and YTD Amount.
+- Group earnings by configured pay code and effective hourly rate, including separate travel and overtime cost codes.
+- Calculate YTD figures from 1 July through the selected pay-period end date.
+- Apply formatting, subtotals and a highlighted YTD Hours column.
+
 ## [0.1.52] - 2026-11-17
 
 ### Changed

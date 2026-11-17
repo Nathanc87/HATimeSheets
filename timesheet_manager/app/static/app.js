@@ -41,9 +41,54 @@ function dateText(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(
 function parseLocalDate(value){const [y,m,d]=value.split("-").map(Number);return new Date(y,m-1,d,12)}
 function displayDate(d){return d.toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"})}
 function displayLongDate(d){return d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-let reportWeekStart=null,reportWeekStartDay=null;
-async function initialiseReportWeek(){settings=await api("api/settings");const day=Number(settings.week_start_day??0);if(!reportWeekStart||reportWeekStartDay!==day){const now=new Date();reportWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);reportWeekStart.setDate(reportWeekStart.getDate()-((reportWeekStart.getDay()+6-day)%7));reportWeekStartDay=day}const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end)}
-function shiftReportWeek(amount){if(!reportWeekStart)return;reportWeekStart.setDate(reportWeekStart.getDate()+amount*7);const end=new Date(reportWeekStart);end.setDate(end.getDate()+6);$("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport()}
+let reportWeekStart=null,reportPeriodDays=7;
+function payCycleStart(settings,target){
+ const anchorText=settings.pay_cycle_start_date;
+ if(!anchorText)return null;
+ const anchor=parseLocalDate(anchorText);
+ const type=settings.pay_cycle_type||"weekly";
+ if(type==="monthly"){
+  const monthDelta=(target.getFullYear()-anchor.getFullYear())*12+(target.getMonth()-anchor.getMonth());
+  const candidate=new Date(anchor.getFullYear(),anchor.getMonth()+monthDelta,Math.min(anchor.getDate(),new Date(anchor.getFullYear(),anchor.getMonth()+monthDelta+1,0).getDate()),12);
+  if(target<candidate)return new Date(anchor.getFullYear(),anchor.getMonth()+monthDelta-1,Math.min(anchor.getDate(),new Date(anchor.getFullYear(),anchor.getMonth()+monthDelta,0).getDate()),12);
+  return candidate;
+ }
+ const days=type==="weekly"?7:type==="fortnightly"?14:Math.max(1,Number(settings.custom_cycle_days||14));
+ const elapsed=Math.round((target-anchor)/86400000);
+ const cycles=Math.floor(elapsed/days);
+ const result=new Date(anchor);
+ result.setDate(result.getDate()+cycles*days);
+ return result;
+}
+async function initialiseReportWeek(){
+ settings=await api("api/settings");
+ const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);
+ let currentStart=payCycleStart(settings,today);
+ if(currentStart){
+  // The report defaults to the most recently completed cycle, not the
+  // cycle currently underway. On Wednesday this selects the Wed-Tue period
+  // that finished yesterday and keeps it selected through payday Thursday.
+  const previousEnd=new Date(currentStart);previousEnd.setDate(previousEnd.getDate()-1);
+  reportWeekStart=payCycleStart(settings,previousEnd)||previousEnd;
+  reportPeriodDays=Math.round((previousEnd-reportWeekStart)/86400000)+1;
+ }else{
+  // If no pay-cycle anchor is configured, fall back to the configured
+  // overtime week start, retaining the previous-completed-week behavior.
+  const day=Number(settings.week_start_day??0);
+  const currentWeekStart=new Date(today);
+  currentWeekStart.setDate(currentWeekStart.getDate()-((currentWeekStart.getDay()+6-day)%7));
+  reportWeekStart=new Date(currentWeekStart);reportWeekStart.setDate(reportWeekStart.getDate()-7);
+  reportPeriodDays=7;
+ }
+ const end=new Date(reportWeekStart);end.setDate(end.getDate()+reportPeriodDays-1);
+ $("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);
+}
+function shiftReportWeek(amount){
+ if(!reportWeekStart)return;
+ reportWeekStart.setDate(reportWeekStart.getDate()+amount*reportPeriodDays);
+ const end=new Date(reportWeekStart);end.setDate(end.getDate()+reportPeriodDays-1);
+ $("#report-start").value=dateText(reportWeekStart);$("#report-end").value=dateText(end);loadReport();
+}
 function shiftDashboardWeek(amount){if(!dashboardWeekStart)return;dashboardWeekStart.setDate(dashboardWeekStart.getDate()+amount*7);loadDashboard()}
 async function loadDashboard(){try{settings=await api("api/settings");const weekStartDay=Number(settings.week_start_day??0);const now=new Date();if(!dashboardWeekStart||dashboardWeekStartDay!==weekStartDay){dashboardWeekStart=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);dashboardWeekStart.setDate(dashboardWeekStart.getDate()-((dashboardWeekStart.getDay()+6-weekStartDay)%7));dashboardWeekStartDay=weekStartDay}const weekEnd=new Date(dashboardWeekStart);weekEnd.setDate(weekEnd.getDate()+6);const startText=dateText(dashboardWeekStart),endText=dateText(weekEnd);$("#dashboard-week-label").textContent="Week ending "+displayDate(weekEnd);const [r,shifts]=await Promise.all([api("api/report?start="+startText+"&end="+endText),api("api/shifts")]);const totalHours=Number(r.total_work_hours||0)+Number(r.total_travel_hours||0);$("#week-hours").textContent=hours(totalHours);$("#gross").textContent=money(r.estimated_gross);$("#gross-note").textContent=r.base_rate_configured?"Calculated estimate":"Set your hourly rate in Settings";$("#take-home").textContent=money(r.estimated_net);$("#take-home-note").textContent=r.estimated_net==null?"Configure the PAYG table for this financial year":"After estimated weekly PAYG withholding";await loadYearEarningsChart();await loadSelectedEarningsChart();}catch(e){toast("Could not load dashboard: "+e.message)}}
 function earningsChartHtml(report){
@@ -186,7 +231,7 @@ async function changeEntryDay(offset){
 function cancelEntry(){showPage("shifts")}
 async function deleteShift(id){if(!confirm("Delete this time entry?"))return;await api("api/shifts/"+id,{method:"DELETE"});loadShifts();toast("Time entry deleted")}
 async function deleteShift(id){if(!confirm("Delete this shift and linked travel?"))return;await api("api/shifts/"+id,{method:"DELETE"});loadShifts();toast("Shift deleted")}
-async function loadReport(){try{if(!reportWeekStart)await initialiseReportWeek();const from=$("#report-start").value,to=$("#report-end").value,project=$("#report-project").value;$("#report-week-label").textContent="Week ending "+displayDate(parseLocalDate(to));const params=new URLSearchParams();if(from&&to){params.set("start",from);params.set("end",to)}if(project)params.set("project",project);const q=params.toString()?"?"+params.toString():"";const [report,allRows]=await Promise.all([api("api/report"+q),api("api/shifts"+(from&&to?"?start="+encodeURIComponent(from)+"&end="+encodeURIComponent(to):""))]);const rows=project?allRows.filter(s=>(s.project||"")===project):allRows;const calculated=new Map((report.shifts||[]).map(x=>[Number(x.id),x]));let total=0;const rateTotals={};$("#report-timesheet").innerHTML=rows.length?'<table><thead><tr><th>Date</th><th>Time in</th><th>Time out</th><th>Unpaid break</th><th>Project</th><th>Paid hours</th><th>Hours by rate</th><th>Entry</th><th>Notes</th></tr></thead><tbody>'+rows.map(s=>{const item=calculated.get(Number(s.id))||{};const raw=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));const h=Number(item.payable_hours??(s.is_travelling?Math.min(raw,600)/60:raw/60));total+=h;const segments=item.segments||[];const breakdown=segments.map(seg=>{const label=seg.pay_code||seg.category||"Rate";const sh=Number(seg.hours||0);const mult=Number(seg.multiplier||1);const key=label;rateTotals[key]=(rateTotals[key]||0)+sh;return '<div class="rate-line">'+esc(label)+': '+hours(sh)+' @ '+mult.toFixed(2)+'×</div>'}).join("")||"—";return '<tr><td>'+esc(s.work_date)+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":esc(s.start_time))+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":esc(s.finish_time))+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":Number(s.break_minutes||0)+' min')+'</td><td>'+esc(s.project||'—')+'</td><td>'+hours(h)+'</td><td>'+breakdown+'</td><td>'+(s.leave_type==="annual_leave"?'Annual Leave':s.leave_type==="sick_leave"?'Sick Leave':s.is_travelling?'Travel':s.is_overseas?'Work - Travel':s.is_public_holiday?'Public holiday':'Work')+'</td><td>'+esc(s.notes||"")+'</td></tr>'}).join("")+'</tbody></table>':'<div class="empty">No entries in this date range.</div>';(report.travel||[]).forEach(t=>{const key=t.pay_code||"Travel-OTH Ordinary 1.3";rateTotals[key]=(rateTotals[key]||0)+Number(t.hours||0)});const allowances=report.allowances||[];$("#report-allowances").innerHTML=allowances.length?'<table><thead><tr><th>Allowance</th><th>Allowance amount</th><th>Frequency</th><th>Basis</th><th>Amount</th></tr></thead><tbody>'+allowances.map(a=>'<tr><td>'+esc(a.name)+'</td><td>'+money(a.unit_amount??a.amount)+'</td><td>'+esc(a.frequency)+'</td><td>'+esc(a.basis)+'</td><td>'+money(a.amount)+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">No allowances for this period.</div>';const codeOrder=["Ordinary 1.0","Ordinary 1.5","Overtime 1.5","Overtime 2.0","Public Holiday","Travel-OTH Ordinary 1.3","Travel-OTH Ordinary 1.8","Travel-OTH OT 1.8","Travel-OTH OT 2.3"];
+async function loadReport(){try{if(!reportWeekStart)await initialiseReportWeek();const from=$("#report-start").value,to=$("#report-end").value,project=$("#report-project").value;$("#report-week-label").textContent="Pay period ending "+displayDate(parseLocalDate(to));const params=new URLSearchParams();if(from&&to){params.set("start",from);params.set("end",to)}if(project)params.set("project",project);const q=params.toString()?"?"+params.toString():"";const [report,allRows]=await Promise.all([api("api/report"+q),api("api/shifts"+(from&&to?"?start="+encodeURIComponent(from)+"&end="+encodeURIComponent(to):""))]);const rows=project?allRows.filter(s=>(s.project||"")===project):allRows;const calculated=new Map((report.shifts||[]).map(x=>[Number(x.id),x]));let total=0;const rateTotals={};$("#report-timesheet").innerHTML=rows.length?'<table><thead><tr><th>Date</th><th>Time in</th><th>Time out</th><th>Unpaid break</th><th>Project</th><th>Paid hours</th><th>Hours by rate</th><th>Entry</th><th>Notes</th></tr></thead><tbody>'+rows.map(s=>{const item=calculated.get(Number(s.id))||{};const raw=Math.max(0,timeMins(s.finish_time,s.start_time)-Number(s.break_minutes||0));const h=Number(item.payable_hours??(s.is_travelling?Math.min(raw,600)/60:raw/60));total+=h;const segments=item.segments||[];const breakdown=segments.map(seg=>{const label=seg.pay_code||seg.category||"Rate";const sh=Number(seg.hours||0);const mult=Number(seg.multiplier||1);const key=label;rateTotals[key]=(rateTotals[key]||0)+sh;return '<div class="rate-line">'+esc(label)+': '+hours(sh)+' @ '+mult.toFixed(2)+'×</div>'}).join("")||"—";return '<tr><td>'+esc(s.work_date)+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":esc(s.start_time))+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":esc(s.finish_time))+'</td><td>'+(s.leave_type&&s.leave_type!=="work"?"—":Number(s.break_minutes||0)+' min')+'</td><td>'+esc(s.project||'—')+'</td><td>'+hours(h)+'</td><td>'+breakdown+'</td><td>'+(s.leave_type==="annual_leave"?'Annual Leave':s.leave_type==="sick_leave"?'Sick Leave':s.is_travelling?'Travel':s.is_overseas?'Work - Travel':s.is_public_holiday?'Public holiday':'Work')+'</td><td>'+esc(s.notes||"")+'</td></tr>'}).join("")+'</tbody></table>':'<div class="empty">No entries in this date range.</div>';(report.travel||[]).forEach(t=>{const key=t.pay_code||"Travel-OTH Ordinary 1.3";rateTotals[key]=(rateTotals[key]||0)+Number(t.hours||0)});const allowances=report.allowances||[];$("#report-allowances").innerHTML=allowances.length?'<table><thead><tr><th>Allowance</th><th>Allowance amount</th><th>Frequency</th><th>Basis</th><th>Amount</th></tr></thead><tbody>'+allowances.map(a=>'<tr><td>'+esc(a.name)+'</td><td>'+money(a.unit_amount??a.amount)+'</td><td>'+esc(a.frequency)+'</td><td>'+esc(a.basis)+'</td><td>'+money(a.amount)+'</td></tr>').join("")+'</tbody></table>':'<div class="empty">No allowances for this period.</div>';const codeOrder=["Ordinary 1.0","Ordinary 1.5","Overtime 1.5","Overtime 2.0","Public Holiday","Travel-OTH Ordinary 1.3","Travel-OTH Ordinary 1.8","Travel-OTH OT 1.8","Travel-OTH OT 2.3"];
 const rateSummary=Object.entries(rateTotals).sort((a,b)=>{const ai=codeOrder.indexOf(a[0]),bi=codeOrder.indexOf(b[0]);return (ai<0?99:ai)-(bi<0?99:bi)||a[0].localeCompare(b[0])}).map(([k,v])=>'<tr><td>'+esc(k)+'</td><td class="summary-value">'+hours(v)+'</td></tr>').join("");
 
 const amountRows=(items)=>items.map(([label,value,emphasis])=>'<tr class="'+(emphasis||'')+'"><td>'+label+'</td><td class="summary-value">'+money(value)+'</td></tr>').join("");

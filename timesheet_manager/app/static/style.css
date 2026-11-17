@@ -159,3 +159,24 @@
 /* 0.1.45 editable payroll code labels */
 .payroll-code-row{grid-template-columns:minmax(220px,1fr)}
 .payroll-code-row label{width:100%}
+
+
+/* 0.1.46 settings subpages and tier-linked cost code editors */
+.settings-nav{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 20px;padding:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.settings-nav-button{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+.settings-nav-button:hover{background:#22364a;color:var(--text)}
+.settings-nav-button.active{background:var(--accent);color:#fff}
+.settings-panel{display:none}
+.settings-panel.active{display:block}
+.settings-form{max-width:none}
+.settings-form>.settings-panel{max-width:1000px}
+.settings-form h3{margin-top:22px}
+.settings-form>.settings-panel>h3:first-child{margin-top:4px}
+.settings-status{min-width:70px}
+#schedule-rules .rule-row{grid-template-columns:minmax(120px,1fr) auto minmax(130px,1fr) minmax(130px,1fr)}
+.schedule-day-name{font-size:13px;font-weight:700;color:var(--text);padding:10px 4px}
+#overtime-rules .rule-row,#travel-rules .rule-row{grid-template-columns:minmax(130px,1fr) minmax(170px,1.3fr) minmax(110px,.8fr) minmax(110px,.8fr) auto}
+#payroll-code-rules .rule-row{grid-template-columns:minmax(220px,1fr)}
+.settings-shell>.settings-panel{margin-top:16px}
+@media(max-width:850px){.settings-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.settings-nav-button{justify-content:flex-start}#schedule-rules .rule-row,#overtime-rules .rule-row,#travel-rules .rule-row{grid-template-columns:1fr 1fr}.schedule-day-name{grid-column:1/-1;padding:3px 0}.settings-form .actions{flex-wrap:wrap}}
+@media(max-width:520px){.settings-nav{grid-template-columns:1fr 1fr;gap:4px;padding:6px}.settings-nav-button{font-size:11px;padding:9px 7px}.settings-nav-button span{white-space:normal}#schedule-rules .rule-row,#overtime-rules .rule-row,#travel-rules .rule-row{grid-template-columns:1fr 1fr}.settings-shell{padding:14px}}

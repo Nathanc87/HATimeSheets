@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.45">
+<title>HATimeSheets</title><link rel="stylesheet" href="static/style.css?v=0.1.46">
 </head>
 <body>
 <aside class="sidebar">
@@ -14,7 +14,7 @@
     <button class="nav" data-page="reports">▤ <span>Reports & export</span></button>
     <button class="nav" data-page="settings">⚙ <span>Settings</span></button>
   </nav>
-  <div class="sidebar-foot">Single-user edition · v0.1.45</div>
+  <div class="sidebar-foot">Single-user edition · v0.1.46</div>
 </aside>
 <main>
 <header><div><div class="eyebrow">PERSONAL WORK RECORDS</div><h1 id="page-title">Dashboard</h1></div><div class="today" id="today"></div></header>
@@ -66,51 +66,85 @@
   <p class="hint">The timesheet lists each day once. Allowances are itemised separately below and on their own Excel sheet.</p></article>
 </section>
 <section id="settings" class="page">
-  <article class="panel"><div class="panel-head"><div><h2>Payroll settings</h2><p>Configure your pay cycle and calculation rules. No hourly rate is assumed.</p></div></div>
-  <form id="settings-form" class="form settings-form">
-    <h3>Projects</h3><p class="hint">Create and manage projects here. Assign them to time entries, then filter reports by project.</p><div id="project-list" class="rule-editor"></div><div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
-    <h3>Base pay</h3>
-    <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
-    <h3>Automatic attendance (Home Assistant)</h3>
-    <p class="hint">Choose a person or device tracker and one or more work zones. Moving between selected zones keeps one ordinary shift open. Leaving all work zones starts a grace period; the finish time remains the actual departure, rounded to the selected interval.</p>
-    <div class="form-row"><label>Presence entity<select name="presence_entity" id="presence-entity"><option value="">Disabled</option></select></label><label>Work zones<select name="work_zone_entities" id="work-zone-entities" multiple size="4"></select></label></div>
-    <div class="form-row"><label>Zone-change grace period (minutes)<input name="presence_grace_minutes" type="number" min="0" max="240" value="30"></label><label>Default automatic start time<input name="presence_start_time" type="time" value="05:30"></label></div>
-    <div class="form-row"><label>Finish-time rounding (minutes)<select name="presence_rounding_minutes"><option value="5">5</option><option value="10">10</option><option value="15" selected>15</option><option value="30">30</option></select></label><div><span class="hint" id="presence-status">Loading Home Assistant entities…</span></div></div>
-    <h3>Pay cycle</h3>
-    <div class="form-row"><label>Cycle type<select name="pay_cycle_type"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom days</option></select></label><label>Cycle anchor / first day<input name="pay_cycle_start_date" type="date"></label></div>
-    <div class="form-row"><label>Custom cycle length (days)<input name="custom_cycle_days" type="number" min="1" value="14"></label><label>Overtime week starts<select name="week_start_day"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></label></div>
-    <label>Ordinary hours per overtime week<input name="ordinary_hours" type="number" min="0" step="0.25"></label>
-    <h3>Normal working hours</h3><p class="hint">Set the normal roster for each day. Work outside an enabled day hours is paid at a minimum of 1.5x, even before weekly overtime thresholds.</p><div id="schedule-rules" class="rule-editor"></div>
-    <h3>Public holiday credit</h3>
-    <div class="form-row"><label>Standard weekday holiday credit (hours)<input name="public_holiday_credit_hours" type="number" min="0" step="0.25"></label><label>Does holiday credit count toward weekly overtime?<select name="public_holiday_credit_counts_toward_overtime"><option value="">Not configured</option><option value="true">Yes</option><option value="false">No</option></select></label></div>
-    <p class="hint">Default credit days are Monday–Thursday. The overtime treatment is deliberately left unconfigured until you confirm your agreement.</p>
-    <h3>Payroll codes</h3><p class="hint">Edit the labels used in reports and exports. Travel code labels automatically include the calculated multiplier.</p><div id="payroll-code-rules" class="rule-editor"></div>
-    <h3>Overtime tiers</h3><p class="hint">Each tier applies once accumulated weekly work hours reach its threshold. The highest reached tier applies; thresholds and rates are editable.</p>
-    <div id="overtime-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('overtime')">+ Add overtime tier</button>
-    <h3>Travel / overseas loading</h3><div class="form-row"><label>Additional multiplier<input name="travel_loading" type="number" min="0" step="0.01" value="0.3"></label></div><p class="hint">Added to the applicable ordinary or overtime multiplier for travelling or overseas work. Example: 1.5x becomes 1.8x. Travelling entries remain capped at 10 paid hours and do not consume weekly overtime thresholds.</p>
-    <h3>Penalty rules</h3><p class="hint">Day-of-week and public-holiday replacement/additional rules.</p>
-    <div id="penalty-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('penalty')">+ Add penalty rule</button>
-    <h3>Allowances</h3><p class="hint">Allowances are included in estimated gross: hourly applies to paid work and travel hours, weekly once per work week, and fixed once per work shift.</p>
-    <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
-    <h3>Estimated weekly income tax</h3>
-    <p class="hint">Weekly PAYG uses the selected financial year's ATO Scale 1 or Scale 2 coefficients when available; these include the standard Medicare levy. Annual resident tax brackets are used only as a fallback when weekly coefficients are unavailable. HELP and Medicare levy surcharge are not included.</p>
-    <label>Additional withholding per week ($)<input name="payg_extra_withholding" type="number" min="0" step="1" value="0"></label>
-    <div class="payg-editor">
-      <div class="form-row payg-year-row"><label>Financial year<select id="payg-financial-year"></select></label><div class="payg-add-year"><label>New financial year<input id="payg-new-year" type="text" placeholder="2027-28" pattern="[0-9]{4}-[0-9]{2}"></label><button type="button" class="secondary" onclick="addPaygYear()">+ Add year</button></div></div>
-      <p class="hint">Resident tax brackets: income boundaries, base tax and marginal rate.</p>
-      <div class="payg-bracket-head"><span>Income from ($)</span><span>Income to ($)</span><span>Base tax ($)</span><span>Rate (%)</span><span></span></div>
-      <div id="payg-resident-brackets" class="payg-brackets"></div>
-      <button type="button" class="secondary" onclick="addResidentBracket()">+ Add tax bracket</button>
+  <article class="panel settings-shell">
+    <div class="panel-head"><div><h2>Settings</h2><p>Choose a settings group. Each page has its own focused controls.</p></div></div>
+    <nav class="settings-nav" aria-label="Settings sections">
+      <button type="button" class="settings-nav-button active" data-settings-page="general">⚙ <span>Data & General</span></button>
+      <button type="button" class="settings-nav-button" data-settings-page="hours">◷ <span>Working Hours</span></button>
+      <button type="button" class="settings-nav-button" data-settings-page="pay">▤ <span>Pay & Overtime</span></button>
+      <button type="button" class="settings-nav-button" data-settings-page="travel">✈ <span>Travel & Overseas</span></button>
+      <button type="button" class="settings-nav-button" data-settings-page="holidays">▦ <span>Public Holidays</span></button>
+    </nav>
+    <form id="settings-form" class="form settings-form">
+      <div class="settings-panel active" data-settings-panel="general">
+        <h3>Projects</h3><p class="hint">Create and manage projects here. Assign them to time entries, then filter reports by project.</p>
+        <div id="project-list" class="rule-editor"></div><div class="form-row"><label>New project<input id="new-project-name" placeholder="Project name"></label><button type="button" class="secondary" onclick="addProject()">+ Add project</button></div>
+        <h3>Base pay</h3>
+        <div class="form-row"><label>Base hourly rate ($)<input name="base_rate" type="number" min="0" step="0.01" placeholder="Not configured"></label><label>Currency<select name="currency"><option value="AUD">AUD – Australian Dollar</option><option value="NZD">NZD</option><option value="USD">USD</option></select></label></div>
+        <h3>Pay cycle</h3>
+        <div class="form-row"><label>Cycle type<select name="pay_cycle_type"><option value="weekly">Weekly</option><option value="fortnightly">Fortnightly</option><option value="monthly">Monthly</option><option value="custom">Custom days</option></select></label><label>Cycle anchor / first day<input name="pay_cycle_start_date" type="date"></label></div>
+        <div class="form-row"><label>Custom cycle length (days)<input name="custom_cycle_days" type="number" min="1" value="14"></label><label>Overtime week starts<select name="week_start_day"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select></label></div>
+        <h3>Automatic attendance (Home Assistant)</h3>
+        <p class="hint">Choose a person or device tracker and one or more work zones. Moving between selected zones keeps one ordinary shift open. Leaving all work zones starts a grace period; the finish time remains the actual departure, rounded to the selected interval.</p>
+        <div class="form-row"><label>Presence entity<select name="presence_entity" id="presence-entity"><option value="">Disabled</option></select></label><label>Work zones<select name="work_zone_entities" id="work-zone-entities" multiple size="4"></select></label></div>
+        <div class="form-row"><label>Zone-change grace period (minutes)<input name="presence_grace_minutes" type="number" min="0" max="240" value="30"></label><label>Default automatic start time<input name="presence_start_time" type="time" value="05:30"></label></div>
+        <div class="form-row"><label>Finish-time rounding (minutes)<select name="presence_rounding_minutes"><option value="5">5</option><option value="10">10</option><option value="15" selected>15</option><option value="30">30</option></select></label><div><span class="hint" id="presence-status">Loading Home Assistant entities…</span></div></div>
+        <h3>Allowances</h3><p class="hint">Hourly applies to paid work and travel hours, weekly once per work week, and fixed once per work shift.</p>
+        <div id="allowance-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('allowance')">+ Add allowance</button>
+        <h3>Estimated weekly income tax</h3>
+        <p class="hint">Weekly PAYG uses the selected financial year's ATO Scale 1 or Scale 2 coefficients when available; these include the standard Medicare levy. Annual resident tax brackets are used only as a fallback. HELP and Medicare levy surcharge are not included.</p>
+        <label>Additional withholding per week ($)<input name="payg_extra_withholding" type="number" min="0" step="1" value="0"></label>
+        <div class="payg-editor">
+          <div class="form-row payg-year-row"><label>Financial year<select id="payg-financial-year"></select></label><div class="payg-add-year"><label>New financial year<input id="payg-new-year" type="text" placeholder="2027-28" pattern="[0-9]{4}-[0-9]{2}"></label><button type="button" class="secondary" onclick="addPaygYear()">+ Add year</button></div></div>
+          <p class="hint">Resident tax brackets: income boundaries, base tax and marginal rate.</p>
+          <div class="payg-bracket-head"><span>Income from ($)</span><span>Income to ($)</span><span>Base tax ($)</span><span>Rate (%)</span><span></span></div>
+          <div id="payg-resident-brackets" class="payg-brackets"></div>
+          <button type="button" class="secondary" onclick="addResidentBracket()">+ Add tax bracket</button>
+        </div>
+        <p class="hint">The final bracket has no upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents" target="_blank" rel="noopener">ATO resident tax rates</a>.</p>
+        <p class="hint">PAYG is estimated separately for each configured work week using the financial year containing that week's end date. Taxable gross includes earnings and allowances. This is not an EOFY assessment.</p>
+        <div class="actions"><button class="primary">Save settings</button><span class="hint settings-status"></span></div>
+      </div>
+      <div class="settings-panel" data-settings-panel="hours">
+        <h3>Normal working hours</h3><p class="hint">Weekdays are fixed. Enable or disable each day and set its normal start and finish times. Work outside an enabled day's hours is paid at a minimum of 1.5×, even before weekly overtime thresholds.</p>
+        <div id="schedule-rules" class="rule-editor"></div>
+        <div class="actions"><button class="primary">Save settings</button><span class="hint settings-status"></span></div>
+      </div>
+      <div class="settings-panel" data-settings-panel="pay">
+        <h3>Ordinary hours & overtime</h3>
+        <label>Ordinary hours per overtime week<input name="ordinary_hours" type="number" min="0" step="0.25"></label>
+        <p class="hint">Each tier applies once accumulated weekly work hours reach its threshold. The highest reached tier applies. Set the cost code name on the tier itself so the label and rate stay together.</p>
+        <div id="overtime-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('overtime')">+ Add overtime tier</button>
+        <h3>Penalty rules</h3><p class="hint">Day-of-week and public-holiday replacement or additional rules.</p>
+        <div id="penalty-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('penalty')">+ Add penalty rule</button>
+        <h3>Other payroll labels</h3><p class="hint">Public holiday and leave labels are managed separately from the overtime tiers.</p>
+        <div id="payroll-code-rules" class="rule-editor"></div>
+        <div class="actions"><button class="primary">Save settings</button><span class="hint settings-status"></span></div>
+      </div>
+      <div class="settings-panel" data-settings-panel="travel">
+        <h3>Travel tiers & cost codes</h3>
+        <p class="hint">Each travel tier owns its cost code name and multiplier. The calculated multiplier is still shown after the code in reports and exports.</p>
+        <div id="travel-rules" class="rule-editor"></div><button type="button" class="secondary" onclick="addRule('travel')">+ Add travel tier</button>
+        <h3>Travel & overseas loading</h3>
+        <div class="form-row"><label>Additional multiplier<input name="travel_loading" type="number" min="0" step="0.01" value="0.3"></label></div>
+        <p class="hint">Added to the applicable ordinary or overtime multiplier for travelling or overseas work. Example: 1.5× becomes 1.8×. Travelling entries remain capped at 10 paid hours and do not consume weekly overtime thresholds.</p>
+        <div class="actions"><button class="primary">Save settings</button><span class="hint settings-status"></span></div>
+      </div>
+      <div class="settings-panel" data-settings-panel="holidays">
+        <h3>Public holiday credit</h3>
+        <div class="form-row"><label>Standard weekday holiday credit (hours)<input name="public_holiday_credit_hours" type="number" min="0" step="0.25"></label><label>Does holiday credit count toward weekly overtime?<select name="public_holiday_credit_counts_toward_overtime"><option value="">Not configured</option><option value="true">Yes</option><option value="false">No</option></select></label></div>
+        <p class="hint">Default credit days are Monday–Thursday. The overtime treatment is deliberately left unconfigured until you confirm your agreement.</p>
+        <div class="actions"><button class="primary">Save settings</button><span class="hint settings-status"></span></div>
+      </div>
+    </form>
+    <div class="settings-panel" data-settings-panel="holidays">
+      <div class="panel-head"><div><h3>Holiday dates</h3><p>Add dates that should trigger your configured holiday rule.</p></div></div>
+      <form id="holiday-form" class="form inline-form"><label>Date<input name="holiday_date" type="date" required></label><label>Name<input name="name" placeholder="Public holiday" required></label><button class="primary">Add holiday</button></form>
+      <div id="holiday-list" class="record-list"></div>
     </div>
-    <p class="hint">The final bracket has no upper limit. <a href="https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents" target="_blank" rel="noopener">ATO resident tax rates</a>.</p>
-    <p class="hint">PAYG is estimated separately for each configured work week using the financial year containing that week's end date. Taxable gross includes earnings and allowances. This is not an EOFY assessment.</p>
-    <div class="actions"><button class="primary">Save settings</button><span id="settings-status" class="hint"></span></div>
-  </form></article>
-  <article class="panel"><div class="panel-head"><div><h2>Public holidays</h2><p>Add dates that should trigger your configured holiday rule</p></div></div>
-    <form id="holiday-form" class="form inline-form"><label>Date<input name="holiday_date" type="date" required></label><label>Name<input name="name" placeholder="Public holiday" required></label><button class="primary">Add holiday</button></form><div id="holiday-list" class="record-list"></div>
   </article>
 </section>
 <div id="toast" role="status"></div>
 </main>
-<script src="static/app.js?v=0.1.45"></script>
+<script src="static/app.js?v=0.1.46"></script>
 </body></html>

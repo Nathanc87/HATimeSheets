@@ -1,3 +1,11 @@
+## [0.1.57] - 2026-11-17
+
+### Fixed
+- Default the Dashboard Selected dates chart to the most recently completed pay period, using the configured Cycle Anchor / First Day and cycle type.
+- Exclude the Selected dates chart inputs from the generic today-date initializer so they are not pre-filled with today before pay-cycle defaults are applied.
+- Preserve manually selected chart date ranges when the dashboard refreshes.
+- Bump add-on and static asset versions to 0.1.57.
+
 ## [0.1.56] - 2026-11-17
 
 ### Changed

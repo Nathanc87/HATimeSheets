@@ -186,8 +186,6 @@
 .header-actions{display:flex;align-items:center;gap:16px}
 .privacy-toggle{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
 .privacy-toggle:hover{border-color:var(--accent2);background:#20364a}
-.privacy-mode .earnings-chart{position:relative;min-height:170px;visibility:hidden}
-.privacy-mode .earnings-chart:after{content:"Pay figures hidden in Privacy Mode";visibility:visible;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;background:var(--panel);border:1px dashed var(--line);border-radius:9px}
 .privacy-mode #pay-rate-history input[data-key="rate"]{-webkit-text-security:disc}
 .privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-inner-spin-button,.privacy-mode #pay-rate-history input[data-key="rate"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 @media(max-width:700px){.header-actions{gap:8px;flex-direction:column;align-items:flex-end}.privacy-toggle{padding:6px 9px}}

@@ -1,3 +1,11 @@
+## [0.1.61] - 2026-11-17
+
+### Changed
+- Show a project or work-entry type between the date number and hours in each calendar day.
+- Display Annual Leave, Sick Leave or Public Holiday in place of the project label when applicable; show Work - Travel for overseas work.
+- Keep daily logged hours visible and show concise project labels when multiple projects are recorded.
+- Bump add-on and static asset versions to 0.1.61.
+
 ## [0.1.60] - 2026-11-17
 
 ### Fixed

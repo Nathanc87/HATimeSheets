@@ -1,3 +1,9 @@
+## [0.1.60] - 2026-11-17
+
+### Fixed
+- Import datetime in the API module so new and edited shift entries can be rounded to 15-minute intervals without a NameError.
+- Fixes the HTTP 500 response from POST /api/shifts when saving a new entry.
+
 ## [0.1.59] - 2026-11-17
 
 ### Changed

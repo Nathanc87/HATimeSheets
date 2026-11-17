@@ -72,7 +72,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             return code("overtime_1_5")
         return str(tier.get("label", "Overtime"))
 
-    def travel_tier_at(absolute_minutes):
+    def travel_tier_at(absolute_minutes, daily_overtime=False):
         multiplier, label, cost_code = 1.3, "Travel ordinary", code("travel_ordinary")
         for travel_tier in travel_tiers:
             if absolute_minutes >= float(travel_tier.get("after_hours", 0)) * 60:
@@ -81,6 +81,14 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                 is_overtime = "overtime" in str(label).lower() or str(label).lower().startswith("ot")
                 fallback = code("travel_overtime" if is_overtime else "travel_ordinary")
                 cost_code = travel_tier.get("cost_code") or fallback
+        if daily_overtime and not ("overtime" in str(label).lower() or str(label).lower().startswith("ot")):
+            daily_tier = next((tier for tier in travel_tiers
+                               if float(tier.get("after_hours", 0)) > 0), None)
+            if daily_tier and float(daily_tier.get("multiplier", 1.3)) > multiplier:
+                multiplier = float(daily_tier.get("multiplier", 1.3))
+                label = daily_tier.get("label", "Travel overtime")
+                is_overtime = "overtime" in str(label).lower() or str(label).lower().startswith("ot")
+                cost_code = daily_tier.get("cost_code") or code("travel_overtime" if is_overtime else "travel_ordinary")
         return multiplier, label, cost_code
 
     result, normalized, by_week = [], [], {}
@@ -155,7 +163,7 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
                             "Travel" if s.get("is_travelling") else
                             "Out-of-hours" if outside and base < 1.5 else label)
                 if overseas:
-                    travel_multiplier, travel_label, travel_cost_code = travel_tier_at(earlier + cursor)
+                    travel_multiplier, travel_label, travel_cost_code = travel_tier_at(earlier + cursor, daily_overtime=daily_overtime)
                     multiplier = max(travel_multiplier, 1.5 if daily_overtime else 1.0)
                     pay_code = f"{travel_cost_code} {multiplier:.1f}"
                 elif category == "Out-of-hours":

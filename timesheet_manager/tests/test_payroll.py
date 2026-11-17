@@ -85,6 +85,31 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Sunday")
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 800)
 
+    def test_pay_rate_history_uses_rate_effective_on_each_shift_date(self):
+        settings = {"base_rate": None, "pay_rate_history": [
+            {"effective_from": "2026-07-01", "rate": 40},
+            {"effective_from": "2026-10-01", "rate": 45}],
+            "week_start_day": 0, "overtime_tiers": [{"after_hours": 0, "multiplier": 1, "label": "Ordinary"}],
+            "travel_rules": [], "penalty_rules": []}
+        shifts = [
+            {"id": 1, "work_date": "2026-09-30", "start_time": "08:00", "finish_time": "09:00", "break_minutes": 0},
+            {"id": 2, "work_date": "2026-10-01", "start_time": "08:00", "finish_time": "09:00", "break_minutes": 0}]
+        result = calculate(shifts, [], settings)
+        self.assertEqual([x["base_rate"] for x in result["shifts"]], [40, 45])
+        self.assertEqual([x["estimated_earnings"] for x in result["shifts"]], [40, 45])
+
+    def test_pay_rate_history_applies_to_separate_travel_entries(self):
+        settings = {"base_rate": None, "pay_rate_history": [
+            {"effective_from": "2026-07-01", "rate": 40},
+            {"effective_from": "2026-10-01", "rate": 45}],
+            "week_start_day": 0, "overtime_tiers": [],
+            "travel_rules": [{"after_hours": 0, "multiplier": 1.3, "label": "Travel ordinary"}],
+            "penalty_rules": []}
+        travel = [{"id": 1, "travel_date": "2026-10-02", "start_time": "08:00", "finish_time": "09:00", "break_minutes": 0}]
+        result = calculate([], travel, settings)
+        self.assertEqual(result["travel"][0]["base_rate"], 45)
+        self.assertEqual(result["travel"][0]["estimated_earnings"], 58.5)
+
     def test_base_rate_is_optional(self):
         settings = {"base_rate": None, "week_start_day": 0, "overtime_tiers": [], "travel_rules": [], "penalty_rules": []}
         shift = {"id":1,"work_date":"2026-11-16","start_time":"05:30","finish_time":"16:00","break_minutes":30,"notes":""}

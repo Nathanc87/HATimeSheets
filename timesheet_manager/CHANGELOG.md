@@ -1,3 +1,10 @@
+## [0.1.63] - 2026-11-18
+
+### Fixed
+- Apply penalty rules according to the time-entry scope: Work rules apply to ordinary work and Travel rules apply to Work - Travel (overseas) entries.
+- Preserve the separate Travelling checkbox behaviour, which remains capped at 10 paid hours and excluded from penalty rules.
+- Add regression tests for Sunday work, Sunday Work - Travel and separate travelling entries.
+
 ## [0.1.62] - 2026-11-17
 
 ### Added

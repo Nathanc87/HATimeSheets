@@ -193,7 +193,8 @@ def calculate(shifts, travel, settings, holidays=None, allowance_entries=None):
             cond = rule.get("condition")
             match = ((cond == "day_of_week" and d.weekday() == int(rule.get("day", -1))) or
                      (cond == "public_holiday" and is_holiday))
-            if match and rule.get("scope", "work") in ("work", "both"):
+            entry_scope = "travel" if s.get("is_overseas") else "work"
+            if match and rule.get("scope", "work") in (entry_scope, "both"):
                 applicable.append(rule)
         if applicable:
             replacements = [x for x in applicable if x.get("mode", "replace") == "replace"]

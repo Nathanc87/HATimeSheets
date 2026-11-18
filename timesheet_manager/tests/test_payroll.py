@@ -85,6 +85,41 @@ class PayrollTests(unittest.TestCase):
         self.assertEqual(result["shifts"][0]["segments"][0]["category"], "Sunday")
         self.assertEqual(result["shifts"][0]["estimated_earnings"], 800)
 
+    def test_sunday_penalty_uses_travel_scope_for_work_travel(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [
+                        {"name": "Sunday Work", "enabled": True, "condition": "day_of_week",
+                         "day": 6, "scope": "work", "multiplier": 2.0, "mode": "replace"},
+                        {"name": "Sunday Travel", "enabled": True, "condition": "day_of_week",
+                         "day": 6, "scope": "travel", "multiplier": 2.3, "mode": "replace"}]}
+        work = {"id": 1, "work_date": "2026-11-22", "start_time": "05:30",
+                "finish_time": "16:00", "break_minutes": 30}
+        overseas = {"id": 2, "work_date": "2026-11-22", "start_time": "05:30",
+                    "finish_time": "16:00", "break_minutes": 30, "is_overseas": True}
+        result = calculate([work, overseas], [], settings)
+        work_entry, travel_entry = result["shifts"]
+        self.assertEqual(work_entry["segments"][0]["category"], "Sunday Work")
+        self.assertEqual(work_entry["segments"][0]["multiplier"], 2.0)
+        self.assertEqual(work_entry["estimated_earnings"], 800)
+        self.assertEqual(travel_entry["segments"][0]["category"], "Sunday Travel")
+        self.assertEqual(travel_entry["segments"][0]["multiplier"], 2.3)
+        self.assertEqual(travel_entry["estimated_earnings"], 920)
+
+    def test_travelling_checkbox_entry_still_excludes_penalty_rules(self):
+        settings = {"base_rate": 40, "week_start_day": 0, "overtime_tiers": [],
+                    "travel_rules": [], "penalty_rules": [
+                        {"name": "Sunday Travel", "enabled": True, "condition": "day_of_week",
+                         "day": 6, "scope": "travel", "multiplier": 2.3, "mode": "replace"}]}
+        shift = {"id": 1, "work_date": "2026-11-22", "start_time": "05:00",
+                 "finish_time": "18:00", "break_minutes": 0, "is_travelling": True,
+                 "is_overseas": True}
+        result = calculate([shift], [], settings)
+        entry = result["shifts"][0]
+        self.assertEqual(entry["segments"], [
+            {"category": "Travel", "pay_code": "Travel-OTH Ordinary 1.3",
+             "hours": 10.0, "multiplier": 1.3}])
+        self.assertEqual(entry["estimated_earnings"], 520)
+
     def test_pay_rate_history_uses_rate_effective_on_each_shift_date(self):
         settings = {"base_rate": None, "pay_rate_history": [
             {"effective_from": "2026-07-01", "rate": 40},

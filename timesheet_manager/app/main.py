@@ -503,7 +503,7 @@ def export_xlsx(start: str | None = None, end: str | None = None):
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","application":"HATimeSheets","version":"0.1.53"}
+    return {"status":"ok","application":"HATimeSheets","version":"0.1.63"}
 
 @app.get("/api/eofy-estimate")
 def eofy_estimate():
